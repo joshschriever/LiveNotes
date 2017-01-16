@@ -12,6 +12,7 @@ import com.joshschriever.livenotes.R;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import uk.co.dolphin_com.seescoreandroid.LicenceKeyInstance;
@@ -118,7 +119,7 @@ public class LiveNotesActivity extends Activity {
         }
 
         scoreView.setScore(score,
-                           stream(new ArrayList<Boolean>(score.numParts()))
+                           stream(spliterator(Arrays.asList(new Boolean[score.numParts()])), false)
                                    .map(__ -> Boolean.TRUE).collect(toList()),
                            1.0f);
     }
