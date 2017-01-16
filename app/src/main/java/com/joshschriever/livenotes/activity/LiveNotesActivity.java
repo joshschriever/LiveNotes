@@ -33,6 +33,7 @@ public class LiveNotesActivity extends Activity {
     private static final List<String> REQUIRED_PERMISSIONS;
 
     static {
+        System.loadLibrary("stlport_shared");
         System.loadLibrary("SeeScoreLib");
 
         REQUIRED_PERMISSIONS = new ArrayList<>();
