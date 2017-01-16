@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.widget.ScrollView;
 
 import com.joshschriever.livenotes.R;
 
@@ -15,6 +16,7 @@ import java.util.List;
 
 import uk.co.dolphin_com.seescoreandroid.LicenceKeyInstance;
 import uk.co.dolphin_com.seescoreandroid.SeeScoreView;
+import uk.co.dolphin_com.sscore.Component;
 import uk.co.dolphin_com.sscore.LoadOptions;
 import uk.co.dolphin_com.sscore.SScore;
 import uk.co.dolphin_com.sscore.ex.ScoreException;
@@ -40,9 +42,9 @@ public class LiveNotesActivity extends Activity {
         REQUIRED_PERMISSIONS.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
     }
 
-    private SScore score;
-
     private SeeScoreView scoreView;
+
+    private SScore score;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,13 +61,15 @@ public class LiveNotesActivity extends Activity {
                 .toArray(String[]::new);
         if (permissionsToRequest.length > 0) {
             requestPermissions(permissionsToRequest, PERMISSION_REQUEST_ALL_REQUIRED);
+        } else {
+            initialize();
         }
     }
 
     @Override
     public void onRequestPermissionsResult(int code, String permissions[], int[] results) {
         if (results.length > 0 && intStream(spliterator(results, 0), false)
-                .allMatch(i -> i == PackageManager.PERMISSION_GRANTED)) {
+                .allMatch(result -> result == PackageManager.PERMISSION_GRANTED)) {
             initialize();
         } else {
             checkPermissions();
@@ -73,8 +77,35 @@ public class LiveNotesActivity extends Activity {
     }
 
     private void initialize() {
-        initializeScore();
         initializeScoreView();
+        initializeScore();
+    }
+
+    private void initializeScoreView() {
+        scoreView = new SeeScoreView(this,
+                                     getAssets(),
+                                     scale -> Log.d("ZoomNotification", "scale: " + scale),
+                                     new SeeScoreView.TapNotification() {
+                                         @Override
+                                         public void tap(int systemIndex,
+                                                         int partIndex,
+                                                         int barIndex,
+                                                         Component[] components) {
+                                             Log.d("TapNotification", "tap");
+                                         }
+
+                                         @Override
+                                         public void longTap(int systemIndex,
+                                                             int partIndex,
+                                                             int barIndex,
+                                                             Component[] components) {
+                                             Log.d("TapNotification", "longTap");
+                                         }
+                                     });
+
+        ScrollView scrollView = (ScrollView) findViewById(R.id.scroll_view);
+        scrollView.addView(scoreView);
+        scrollView.setOnTouchListener((view, event) -> scoreView.onTouchEvent(event));
     }
 
     private void initializeScore() {
@@ -85,10 +116,7 @@ public class LiveNotesActivity extends Activity {
             Log.e("ScoreException", e.getMessage());
             e.printStackTrace();
         }
-    }
 
-    private void initializeScoreView() {
-        scoreView = (SeeScoreView) findViewById(R.id.score_view);
         scoreView.setScore(score,
                            stream(new ArrayList<Boolean>(score.numParts()))
                                    .map(__ -> Boolean.TRUE).collect(toList()),

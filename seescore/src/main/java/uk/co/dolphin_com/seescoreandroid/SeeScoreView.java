@@ -22,7 +22,6 @@ import uk.co.dolphin_com.sscore.playdata.Note;
 
 import android.animation.ValueAnimator;
 import android.app.Activity;
-import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Canvas;
 import android.graphics.Rect;
@@ -33,7 +32,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.v4.view.MotionEventCompat;
-import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
@@ -117,7 +115,7 @@ public class SeeScoreView extends LinearLayout  {
 	 *           NB tn disables pinch-zoom
      */
 	public SeeScoreView(Activity context, AssetManager am, ZoomNotification zn, TapNotification tn) {
-		this(context);
+		super(context);
 		setOrientation(VERTICAL);
 		this.assetManager = am;
 		this.magnification = 1.0F;
@@ -130,22 +128,6 @@ public class SeeScoreView extends LinearLayout  {
 		android.graphics.Point screenSize = new android.graphics.Point();
 		display.getSize(screenSize);
 		screenHeight = screenSize.y;
-	}
-
-	public SeeScoreView(Context context) {
-		this(context, null);
-	}
-
-	public SeeScoreView(Context context, AttributeSet attrs) {
-		this(context, attrs, 0);
-	}
-
-	public SeeScoreView(Context context, AttributeSet attrs, int defStyleAttr) {
-		this(context, attrs, defStyleAttr, 0);
-	}
-
-	public SeeScoreView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
-		super(context, attrs, defStyleAttr, defStyleRes);
 	}
 
     /**

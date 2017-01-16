@@ -23,5 +23,5 @@ public class LicenceKeyInstance
     private static final int[] keycap = {0X1044b4,0X0};
     private static final int[] keycode = {0X25a648b9,0X47f07cfe,0Xab211079,0X7d9e2c97,0X1b81adef,0Xc966ff4,0X5ec23404,0X1fe52336,0X8394c0e5,0X7c6abe95,0X44066803,0Xe9c9c6fc,0X96bfd9,0X290d3fdc,0Xf0965ce};
 
-    public static final SScoreKey SeeScoreLibKey = new SScoreKey("evaluation", keycap, keycode);
+    public static final SScoreKey SeeScoreLibKey = new SScoreKey("Live Notes", keycap, keycode);
 }
