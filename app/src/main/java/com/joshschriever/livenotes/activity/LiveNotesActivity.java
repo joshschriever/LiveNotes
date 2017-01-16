@@ -13,13 +13,15 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import java8.util.stream.Collectors;
 import uk.co.dolphin_com.seescoreandroid.LicenceKeyInstance;
 import uk.co.dolphin_com.seescoreandroid.SeeScoreView;
 import uk.co.dolphin_com.sscore.LoadOptions;
 import uk.co.dolphin_com.sscore.SScore;
 import uk.co.dolphin_com.sscore.ex.ScoreException;
 
+import static java8.util.Spliterators.spliterator;
+import static java8.util.stream.Collectors.toList;
+import static java8.util.stream.StreamSupport.intStream;
 import static java8.util.stream.StreamSupport.stream;
 
 public class LiveNotesActivity extends Activity {
@@ -51,9 +53,9 @@ public class LiveNotesActivity extends Activity {
     }
 
     private void checkPermissions() {
-        String[] permissionsToRequest = stream(REQUIRED_PERMISSIONS).filter(
-                s -> checkSelfPermission(s) == PackageManager.PERMISSION_DENIED)
-                                                                    .toArray(String[]::new);
+        String[] permissionsToRequest = stream(REQUIRED_PERMISSIONS)
+                .filter(s -> checkSelfPermission(s) == PackageManager.PERMISSION_DENIED)
+                .toArray(String[]::new);
         if (permissionsToRequest.length > 0) {
             requestPermissions(permissionsToRequest, PERMISSION_REQUEST_ALL_REQUIRED);
         }
@@ -61,14 +63,8 @@ public class LiveNotesActivity extends Activity {
 
     @Override
     public void onRequestPermissionsResult(int code, String permissions[], int[] results) {
-        boolean allGranted = true;
-        for (int granted : results) {
-            if (granted == PackageManager.PERMISSION_DENIED) {
-                allGranted = false;
-                break;
-            }
-        }
-        if (results.length > 0 && allGranted) {
+        if (results.length > 0 && intStream(spliterator(results, 0), false)
+                .allMatch(i -> i == PackageManager.PERMISSION_GRANTED)) {
             initialize();
         } else {
             checkPermissions();
@@ -94,7 +90,7 @@ public class LiveNotesActivity extends Activity {
         scoreView = (SeeScoreView) findViewById(R.id.score_view);
         scoreView.setScore(score,
                            stream(new ArrayList<Boolean>(score.numParts()))
-                                   .map(__ -> Boolean.TRUE).collect(Collectors.toList()),
+                                   .map(__ -> Boolean.TRUE).collect(toList()),
                            1.0f);
     }
 
