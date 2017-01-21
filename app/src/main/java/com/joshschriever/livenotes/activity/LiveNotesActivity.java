@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.widget.ScrollView;
 
@@ -68,7 +69,9 @@ public class LiveNotesActivity extends Activity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int code, String permissions[], int[] results) {
+    public void onRequestPermissionsResult(int code,
+                                           @NonNull String permissions[],
+                                           @NonNull int[] results) {
         if (results.length > 0 && intStream(spliterator(results, 0), false)
                 .allMatch(result -> result == PackageManager.PERMISSION_GRANTED)) {
             initialize();
