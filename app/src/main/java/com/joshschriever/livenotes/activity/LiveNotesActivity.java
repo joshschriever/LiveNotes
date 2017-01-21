@@ -13,25 +13,22 @@ import com.joshschriever.livenotes.R;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import uk.co.dolphin_com.seescoreandroid.LicenceKeyInstance;
 import uk.co.dolphin_com.seescoreandroid.SeeScoreView;
 import uk.co.dolphin_com.sscore.Component;
 import uk.co.dolphin_com.sscore.LoadOptions;
 import uk.co.dolphin_com.sscore.SScore;
 import uk.co.dolphin_com.sscore.ex.ScoreException;
 
-import static java8.util.Spliterators.spliterator;
+import static java8.util.J8Arrays.stream;
 import static java8.util.stream.Collectors.toList;
-import static java8.util.stream.StreamSupport.intStream;
 import static java8.util.stream.StreamSupport.stream;
+import static uk.co.dolphin_com.seescoreandroid.LicenceKeyInstance.SeeScoreLibKey;
 
 public class LiveNotesActivity extends Activity {
 
-    public static final LoadOptions loadOptions
-            = new LoadOptions(LicenceKeyInstance.SeeScoreLibKey, true);
+    public static final LoadOptions loadOptions = new LoadOptions(SeeScoreLibKey, true);
 
     private static final int PERMISSION_REQUEST_ALL_REQUIRED = 1;
     private static final List<String> REQUIRED_PERMISSIONS;
@@ -72,8 +69,8 @@ public class LiveNotesActivity extends Activity {
     public void onRequestPermissionsResult(int code,
                                            @NonNull String permissions[],
                                            @NonNull int[] results) {
-        if (results.length > 0 && intStream(spliterator(results, 0), false)
-                .allMatch(result -> result == PackageManager.PERMISSION_GRANTED)) {
+        if (results.length > 0
+                && stream(results).allMatch(r -> r == PackageManager.PERMISSION_GRANTED)) {
             initialize();
         } else {
             checkPermissions();
@@ -115,14 +112,18 @@ public class LiveNotesActivity extends Activity {
     private void initializeScore() {
         File file = new File(Environment.getExternalStorageDirectory(), "BeetAnGeSample.xml");
         try {
-            score = SScore.loadXMLFile(file, loadOptions);
+            setScore(SScore.loadXMLFile(file, loadOptions));
         } catch (ScoreException e) {
             Log.e("ScoreException", e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    private void setScore(SScore newScore) {
+        score = newScore;
 
         scoreView.setScore(score,
-                           stream(spliterator(Arrays.asList(new Boolean[score.numParts()])), false)
+                           stream(new Boolean[score.numParts()])
                                    .map(__ -> Boolean.TRUE).collect(toList()),
                            1.0f);
     }
