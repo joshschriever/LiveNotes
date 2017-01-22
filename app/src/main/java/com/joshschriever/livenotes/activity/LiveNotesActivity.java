@@ -4,14 +4,14 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.widget.ScrollView;
 
 import com.joshschriever.livenotes.R;
+import com.joshschriever.livenotes.util.Constants;
+import com.joshschriever.livenotes.util.SingleParamResultlessTask;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +28,7 @@ import static uk.co.dolphin_com.seescoreandroid.LicenceKeyInstance.SeeScoreLibKe
 
 public class LiveNotesActivity extends Activity {
 
-    public static final LoadOptions loadOptions = new LoadOptions(SeeScoreLibKey, true);
+    public static final LoadOptions LOAD_OPTIONS = new LoadOptions(SeeScoreLibKey, true);
 
     private static final int PERMISSION_REQUEST_ALL_REQUIRED = 1;
     private static final List<String> REQUIRED_PERMISSIONS;
@@ -44,6 +44,7 @@ public class LiveNotesActivity extends Activity {
     private SeeScoreView scoreView;
 
     private SScore score;
+    private String scoreXML;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,18 +111,26 @@ public class LiveNotesActivity extends Activity {
     }
 
     private void initializeScore() {
-        File file = new File(Environment.getExternalStorageDirectory(), "BeetAnGeSample.xml");
-        try {
-            setScore(SScore.loadXMLFile(file, loadOptions));
-        } catch (ScoreException e) {
-            Log.e("ScoreException", e.getMessage());
-            e.printStackTrace();
-        }
+        setScoreXML(Constants.INITIAL_XML);
+    }
+
+    private void setScoreXML(String newXML) {
+        scoreXML = newXML;
+        new SingleParamResultlessTask<String>() {
+            @Override
+            protected void doInBackground(String xml) {
+                try {
+                    setScore(SScore.loadXMLData(xml.getBytes(), LOAD_OPTIONS));
+                } catch (ScoreException e) {
+                    Log.e("ScoreException", e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        }.execute(scoreXML);
     }
 
     private void setScore(SScore newScore) {
         score = newScore;
-
         scoreView.setScore(score,
                            stream(new Boolean[score.numParts()])
                                    .map(__ -> Boolean.TRUE).collect(toList()),
