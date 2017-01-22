@@ -9,7 +9,7 @@ import android.util.Log;
 import android.widget.ScrollView;
 
 import com.joshschriever.livenotes.R;
-import com.joshschriever.livenotes.musicxml.XMLRenderer;
+import com.joshschriever.livenotes.musicxml.MidiToXMLRenderer;
 import com.joshschriever.livenotes.task.SingleParamResultlessTask;
 
 import java.util.ArrayList;
@@ -26,7 +26,7 @@ import static java8.util.stream.Collectors.toList;
 import static java8.util.stream.StreamSupport.stream;
 import static uk.co.dolphin_com.seescoreandroid.LicenceKeyInstance.SeeScoreLibKey;
 
-public class LiveNotesActivity extends Activity implements XMLRenderer.Callbacks {
+public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Callbacks {
 
     private static final LoadOptions LOAD_OPTIONS = new LoadOptions(SeeScoreLibKey, true);
     private static final int PERMISSION_REQUEST_ALL_REQUIRED = 1;
@@ -41,7 +41,7 @@ public class LiveNotesActivity extends Activity implements XMLRenderer.Callbacks
 
     private SeeScoreView scoreView;
 
-    private XMLRenderer xmlRenderer;
+    private MidiToXMLRenderer midiToXmlRenderer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,8 +108,8 @@ public class LiveNotesActivity extends Activity implements XMLRenderer.Callbacks
     }
 
     private void initializeScore() {
-        xmlRenderer = new XMLRenderer(this);
-        setScoreXML(xmlRenderer.getXML());
+        midiToXmlRenderer = new MidiToXMLRenderer(this);
+        setScoreXML(midiToXmlRenderer.getXML());
     }
 
     @Override

@@ -1,16 +1,13 @@
 package com.joshschriever.livenotes.musicxml;
 
-import org.jfugue.MusicXmlRenderer;
-
-public class XMLRenderer {
+public class MidiToXMLRenderer {
 
     private Callbacks callbacks;
-    private MusicXmlRenderer renderer;
+    private MusicXMLRenderer renderer;
 
-    public XMLRenderer(Callbacks callbacks) {
+    public MidiToXMLRenderer(Callbacks callbacks) {
         this.callbacks = callbacks;
-        renderer = new MusicXmlRenderer();
-        renderer.doFirstMeasure(true);
+        renderer = new MusicXMLRenderer();
     }
 
     public String getXML() {
