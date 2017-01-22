@@ -1,4 +1,4 @@
-package com.joshschriever.livenotes.util;
+package com.joshschriever.livenotes.task;
 
 import android.os.AsyncTask;
 

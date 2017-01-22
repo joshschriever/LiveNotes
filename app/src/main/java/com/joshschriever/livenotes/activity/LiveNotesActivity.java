@@ -9,8 +9,8 @@ import android.util.Log;
 import android.widget.ScrollView;
 
 import com.joshschriever.livenotes.R;
-import com.joshschriever.livenotes.util.Constants;
-import com.joshschriever.livenotes.util.SingleParamResultlessTask;
+import com.joshschriever.livenotes.musicxml.XMLRenderer;
+import com.joshschriever.livenotes.task.SingleParamResultlessTask;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,25 +26,22 @@ import static java8.util.stream.Collectors.toList;
 import static java8.util.stream.StreamSupport.stream;
 import static uk.co.dolphin_com.seescoreandroid.LicenceKeyInstance.SeeScoreLibKey;
 
-public class LiveNotesActivity extends Activity {
+public class LiveNotesActivity extends Activity implements XMLRenderer.Callbacks {
 
-    public static final LoadOptions LOAD_OPTIONS = new LoadOptions(SeeScoreLibKey, true);
-
+    private static final LoadOptions LOAD_OPTIONS = new LoadOptions(SeeScoreLibKey, true);
     private static final int PERMISSION_REQUEST_ALL_REQUIRED = 1;
-    private static final List<String> REQUIRED_PERMISSIONS;
+    private static final List<String> REQUIRED_PERMISSIONS = new ArrayList<>();
 
     static {
         System.loadLibrary("stlport_shared");
         System.loadLibrary("SeeScoreLib");
 
-        REQUIRED_PERMISSIONS = new ArrayList<>();
         REQUIRED_PERMISSIONS.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
     }
 
     private SeeScoreView scoreView;
 
-    private SScore score;
-    private String scoreXML;
+    private XMLRenderer xmlRenderer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,11 +108,16 @@ public class LiveNotesActivity extends Activity {
     }
 
     private void initializeScore() {
-        setScoreXML(Constants.INITIAL_XML);
+        xmlRenderer = new XMLRenderer(this);
+        setScoreXML(xmlRenderer.getXML());
+    }
+
+    @Override
+    public void onNewXML(String newXML) {
+        setScoreXML(newXML);
     }
 
     private void setScoreXML(String newXML) {
-        scoreXML = newXML;
         new SingleParamResultlessTask<String>() {
             @Override
             protected void doInBackground(String xml) {
@@ -126,11 +128,10 @@ public class LiveNotesActivity extends Activity {
                     e.printStackTrace();
                 }
             }
-        }.execute(scoreXML);
+        }.execute(newXML);
     }
 
-    private void setScore(SScore newScore) {
-        score = newScore;
+    private void setScore(SScore score) {
         scoreView.setScore(score,
                            stream(new Boolean[score.numParts()])
                                    .map(__ -> Boolean.TRUE).collect(toList()),
