@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.widget.ScrollView;
@@ -15,6 +16,8 @@ import com.joshschriever.livenotes.task.SingleParamResultlessTask;
 import java.util.ArrayList;
 import java.util.List;
 
+import jp.kshoji.javax.sound.midi.InvalidMidiDataException;
+import jp.kshoji.javax.sound.midi.ShortMessage;
 import uk.co.dolphin_com.seescoreandroid.SeeScoreView;
 import uk.co.dolphin_com.sscore.Component;
 import uk.co.dolphin_com.sscore.LoadOptions;
@@ -41,7 +44,7 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
 
     private SeeScoreView scoreView;
 
-    private MidiToXMLRenderer midiToXmlRenderer;
+    private MidiToXMLRenderer midiToXMLRenderer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,16 +111,56 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
     }
 
     private void initializeScore() {
-        midiToXmlRenderer = new MidiToXMLRenderer(this);
-        setScoreXML(midiToXmlRenderer.getXML());
+        midiToXMLRenderer = new MidiToXMLRenderer(this);
+        onXMLUpdated();
+        //TODO - remove all below
+        try {
+            midiToXMLRenderer.messageReady(new ShortMessage(ShortMessage.NOTE_ON,
+                                                            48,
+                                                            1),
+                                           System.currentTimeMillis());
+        } catch (InvalidMidiDataException e) {
+            e.printStackTrace();
+        }
+        new Handler().postDelayed(() -> {
+            try {
+                midiToXMLRenderer.messageReady(new ShortMessage(ShortMessage.NOTE_OFF,
+                                                                48,
+                                                                1),
+                                               System.currentTimeMillis());
+            } catch (InvalidMidiDataException e) {
+                e.printStackTrace();
+            }
+        }, 100);
+        new Handler().postDelayed(() -> {
+            try {
+                midiToXMLRenderer.messageReady(new ShortMessage(ShortMessage.NOTE_ON,
+                                                                50,
+                                                                1),
+                                               System.currentTimeMillis());
+            } catch (InvalidMidiDataException e) {
+                e.printStackTrace();
+            }
+        }, 2110);
+        new Handler().postDelayed(() -> {
+            try {
+                midiToXMLRenderer.messageReady(new ShortMessage(ShortMessage.NOTE_OFF,
+                                                                50,
+                                                                1),
+                                               System.currentTimeMillis());
+            } catch (InvalidMidiDataException e) {
+                e.printStackTrace();
+            }
+        }, 2150);
     }
 
     @Override
-    public void onNewXML(String newXML) {
-        setScoreXML(newXML);
+    public void onXMLUpdated() {
+        setScoreXML(midiToXMLRenderer.getXML());
     }
 
     private void setScoreXML(String newXML) {
+        Log.d("xml:", newXML);//TODO - remove
         new SingleParamResultlessTask<String>() {
             @Override
             protected void doInBackground(String xml) {

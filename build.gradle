@@ -15,6 +15,7 @@ buildscript {
 allprojects {
     repositories {
         jcenter()
+        maven { url 'https://github.com/kshoji/javax.sound.midi-for-Android/raw/master/javax.sound.midi/repository' }
         maven { url 'https://github.com/kshoji/JFugue-for-Android/raw/master/jfugue-android/snapshot' }
     }
 }
