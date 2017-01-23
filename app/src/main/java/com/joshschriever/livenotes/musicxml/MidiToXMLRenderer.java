@@ -22,10 +22,6 @@ public class MidiToXMLRenderer implements MidiMessageRecipient {
 
     @Override
     public void messageReady(MidiMessage midiMessage, long timeStamp) {
-        parser.removeParserListener(renderer);
-        renderer = new MusicXmlRenderer();
-        parser.addParserListener(renderer);
-        //TODO - find a way around the above 3 lines
         parser.parse(midiMessage, timeStamp);
 
         if (midiMessage.getStatus() == ShortMessage.NOTE_OFF) {

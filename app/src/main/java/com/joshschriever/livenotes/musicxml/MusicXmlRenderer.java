@@ -19,9 +19,10 @@ import nu.xom.DocType;
 import nu.xom.Document;
 import nu.xom.Element;
 import nu.xom.Elements;
-
+//TODO - on note off - replace the one with 0 duration instead of adding a new one
 public class MusicXmlRenderer implements ParserListener {
 
+    private Document document;
     private Element root = new Element("score-partwise");
     private Element elCurMeasure;
     private Element elPartList;
@@ -40,8 +41,7 @@ public class MusicXmlRenderer implements ParserListener {
     }
 
     public String getDefaultMusicXMLString() {
-        Document xomDoc = this.getMusicXMLDoc();
-        return xomDoc.toXML();
+        return getMusicXMLDoc().toXML();
     }
 
     public final String getMusicXMLString() {
@@ -71,11 +71,14 @@ public class MusicXmlRenderer implements ParserListener {
             }
         }
 
-        Document var6 = new Document(this.root);
-        DocType var7 = new DocType("score-partwise", "-//Recordare//DTD MusicXML 1.1 Partwise//EN",
-                                   "http://www.musicxml.org/dtds/partwise.dtd");
-        var6.insertChild(var7, 0);
-        return var6;
+        if (document == null) {
+            document = new Document(root);
+            document.insertChild(
+                    new DocType("score-partwise", "-//Recordare//DTD MusicXML 1.1 Partwise//EN",
+                                "http://www.musicxml.org/dtds/partwise.dtd"),
+                    0);
+        }
+        return document;
     }
 
     public void doFirstMeasure(boolean bAddDefaults) {
