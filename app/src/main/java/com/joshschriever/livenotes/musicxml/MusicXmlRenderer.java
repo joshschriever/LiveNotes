@@ -53,6 +53,11 @@ public class MusicXmlRenderer implements ParserListener {
     }
 
     public String getMusicXMLString() {
+        return getInternalMusicXMLString().replaceAll("<duration>0</duration>",
+                                                      "<duration>1</duration>");
+    }
+
+    protected String getInternalMusicXMLString() {
         return getMusicXMLDoc().toXML();
     }
 
@@ -503,9 +508,13 @@ public class MusicXmlRenderer implements ParserListener {
                       .equals(stepForNoteValue(value))
                 && elPitch.getFirstChildElement("octave").getValue()
                           .equals(octaveForNoteValue(value))
-                && (alterForNoteValue(value) == 0
-                || elPitch.getFirstChildElement("alter").getValue()
-                          .equals(Integer.toString(alterForNoteValue(value))));
+                && alterMatches(elPitch.getFirstChildElement("alter"), value);
+    }
+
+    private static boolean alterMatches(Element elAlter, int value) {
+        int alter = alterForNoteValue(value);
+        return alter == 0 ? elAlter == null
+                          : elAlter != null && elAlter.getValue().equals(Integer.toString(alter));
     }
 
     private static Stream<Element> stream(Elements elements) {
