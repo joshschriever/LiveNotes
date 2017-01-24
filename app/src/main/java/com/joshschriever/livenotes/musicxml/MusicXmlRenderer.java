@@ -19,7 +19,8 @@ import nu.xom.DocType;
 import nu.xom.Document;
 import nu.xom.Element;
 import nu.xom.Elements;
-//TODO - on note off - replace the one with 0 duration instead of adding a new one
+
+// Forked from JFugue
 public class MusicXmlRenderer implements ParserListener {
 
     private Document document;
@@ -38,22 +39,15 @@ public class MusicXmlRenderer implements ParserListener {
         this.root.appendChild(elID);
         this.elPartList = new Element("part-list");
         this.root.appendChild(this.elPartList);
+        document = new Document(root);
+        document.insertChild(new DocType("score-partwise",
+                                         "-//Recordare//DTD MusicXML 1.1 Partwise//EN",
+                                         "http://www.musicxml.org/dtds/partwise.dtd"),
+                             0);
     }
 
-    public String getDefaultMusicXMLString() {
+    public String getMusicXMLString() {
         return getMusicXMLDoc().toXML();
-    }
-
-    public final String getMusicXMLString() {
-        String xml = getDefaultMusicXMLString();
-        int divisionsEnd = xml.indexOf("</divisions>") + 12;
-        int keyStart = xml.indexOf("<key>");
-        int keyEnd = xml.indexOf("</key>") + 6;
-
-        return xml.substring(0, divisionsEnd)
-                + xml.substring(keyStart, keyEnd)
-                + xml.substring(divisionsEnd, keyStart)
-                + xml.substring(keyEnd);
     }
 
     public Document getMusicXMLDoc() {
@@ -71,13 +65,6 @@ public class MusicXmlRenderer implements ParserListener {
             }
         }
 
-        if (document == null) {
-            document = new Document(root);
-            document.insertChild(
-                    new DocType("score-partwise", "-//Recordare//DTD MusicXML 1.1 Partwise//EN",
-                                "http://www.musicxml.org/dtds/partwise.dtd"),
-                    0);
-        }
         return document;
     }
 
@@ -97,6 +84,16 @@ public class MusicXmlRenderer implements ParserListener {
                 elClef = new Element("divisions");
                 elClef.appendChild(Integer.toString(4));
                 elAttributes.appendChild(elClef);
+
+                Element elKey = new Element("key");
+                Element elFifths = new Element("fifths");
+                elFifths.appendChild("0");
+                elKey.appendChild(elFifths);
+                Element elMode = new Element("mode");
+                elMode.appendChild("major");
+                elKey.appendChild(elMode);
+                elAttributes.appendChild(elKey);
+
                 elSign = new Element("time");
                 elLine = new Element("beats");
                 elLine.appendChild(Integer.toString(4));
@@ -105,9 +102,7 @@ public class MusicXmlRenderer implements ParserListener {
                 elBeatType.appendChild(Integer.toString(4));
                 elSign.appendChild(elBeatType);
                 elAttributes.appendChild(elSign);
-            }
 
-            if (bAddDefaults) {
                 elClef = new Element("clef");
                 elSign = new Element("sign");
                 elSign.appendChild("G");
@@ -123,14 +118,9 @@ public class MusicXmlRenderer implements ParserListener {
             }
 
             if (bAddDefaults) {
-                this.doKeySig(new KeySignature((byte) 0, (byte) 0));
-            }
-
-            if (bAddDefaults) {
                 this.doTempo(new Tempo(120));
             }
         }
-
     }
 
     public void voiceEvent(Voice voice) {
@@ -341,6 +331,7 @@ public class MusicXmlRenderer implements ParserListener {
     }
 
     private void doNote(Note note, boolean bChord) {
+        //TODO - when duration > 0, replace the note with 0 duration instead of adding a new one
         Element elNote = new Element("note");
         if (bChord) {
             elNote.appendChild(new Element("chord"));
