@@ -135,7 +135,7 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
         new Handler().postDelayed(() -> {
             try {
                 midiToXMLRenderer.messageReady(new ShortMessage(ShortMessage.NOTE_ON,
-                                                                50,
+                                                                51,
                                                                 1),
                                                System.currentTimeMillis());
             } catch (InvalidMidiDataException e) {
@@ -145,7 +145,7 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
         new Handler().postDelayed(() -> {
             try {
                 midiToXMLRenderer.messageReady(new ShortMessage(ShortMessage.NOTE_OFF,
-                                                                50,
+                                                                51,
                                                                 1),
                                                System.currentTimeMillis());
             } catch (InvalidMidiDataException e) {

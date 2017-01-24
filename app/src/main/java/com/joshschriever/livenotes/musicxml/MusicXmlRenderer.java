@@ -14,6 +14,7 @@ import org.jfugue.Tempo;
 import org.jfugue.Time;
 import org.jfugue.Voice;
 
+import java8.util.Optional;
 import nu.xom.Attribute;
 import nu.xom.DocType;
 import nu.xom.Document;
@@ -36,9 +37,9 @@ public class MusicXmlRenderer implements ParserListener {
         elCreator.addAttribute(new Attribute("type", "software"));
         elCreator.appendChild("JFugue MusicXMLRenderer");
         elID.appendChild(elCreator);
-        this.root.appendChild(elID);
-        this.elPartList = new Element("part-list");
-        this.root.appendChild(this.elPartList);
+        root.appendChild(elID);
+        elPartList = new Element("part-list");
+        root.appendChild(elPartList);
         document = new Document(root);
         document.insertChild(new DocType("score-partwise",
                                          "-//Recordare//DTD MusicXML 1.1 Partwise//EN",
@@ -51,8 +52,8 @@ public class MusicXmlRenderer implements ParserListener {
     }
 
     public Document getMusicXMLDoc() {
-        this.finishCurrentVoice();
-        Elements elDocParts = this.root.getChildElements("part");
+        finishCurrentVoice();
+        Elements elDocParts = root.getChildElements("part");
 
         for (int xomDoc = 0; xomDoc < elDocParts.size(); ++xomDoc) {
             Element docType = elDocParts.get(xomDoc);
@@ -69,13 +70,13 @@ public class MusicXmlRenderer implements ParserListener {
     }
 
     public void doFirstMeasure(boolean bAddDefaults) {
-        if (this.elCurPart == null) {
-            this.newVoice(new Voice((byte) 0));
+        if (elCurPart == null) {
+            newVoice(new Voice((byte) 0));
         }
 
-        if (this.elCurMeasure == null) {
-            this.elCurMeasure = new Element("measure");
-            this.elCurMeasure.addAttribute(new Attribute("number", Integer.toString(1)));
+        if (elCurMeasure == null) {
+            elCurMeasure = new Element("measure");
+            elCurMeasure.addAttribute(new Attribute("number", Integer.toString(1)));
             Element elAttributes = new Element("attributes");
             Element elClef;
             Element elSign;
@@ -114,11 +115,11 @@ public class MusicXmlRenderer implements ParserListener {
             }
 
             if (elAttributes.getChildCount() > 0) {
-                this.elCurMeasure.appendChild(elAttributes);
+                elCurMeasure.appendChild(elAttributes);
             }
 
             if (bAddDefaults) {
-                this.doTempo(new Tempo(120));
+                doTempo(new Tempo(120));
             }
         }
     }
@@ -126,10 +127,10 @@ public class MusicXmlRenderer implements ParserListener {
     public void voiceEvent(Voice voice) {
         String sReqVoice = voice.getMusicString();
         String sCurPartID =
-                this.elCurPart == null ? null : this.elCurPart.getAttribute("id").getValue();
+                elCurPart == null ? null : elCurPart.getAttribute("id").getValue();
         if (sCurPartID == null || sReqVoice.compareTo(sCurPartID) != 0) {
             boolean bNewVoiceExists = false;
-            Elements elParts = this.root.getChildElements("part");
+            Elements elParts = root.getChildElements("part");
             Element elExistingNewPart = null;
 
             for (int x = 0; x < elParts.size(); ++x) {
@@ -141,22 +142,21 @@ public class MusicXmlRenderer implements ParserListener {
                 }
             }
 
-            this.finishCurrentVoice();
+            finishCurrentVoice();
             if (bNewVoiceExists) {
-                this.elCurPart = elExistingNewPart;
+                elCurPart = elExistingNewPart;
             } else {
-                this.newVoice(voice);
+                newVoice(voice);
             }
 
-            this.newMeasure();
+            newMeasure();
         }
     }
 
     private void finishCurrentVoice() {
-        String sCurPartID =
-                this.elCurPart == null ? null : this.elCurPart.getAttribute("id").getValue();
+        String sCurPartID = elCurPart == null ? null : elCurPart.getAttribute("id").getValue();
         boolean bCurVoiceExists = false;
-        Elements elParts = this.root.getChildElements("part");
+        Elements elParts = root.getChildElements("part");
         Element elExistingCurPart = null;
 
         for (int x = 0; x < elParts.size(); ++x) {
@@ -168,29 +168,29 @@ public class MusicXmlRenderer implements ParserListener {
             }
         }
 
-        if (this.elCurPart != null) {
-            this.finishCurrentMeasure();
+        if (elCurPart != null) {
+            finishCurrentMeasure();
             if (bCurVoiceExists) {
-                this.root.replaceChild(elExistingCurPart, this.elCurPart);
+                root.replaceChild(elExistingCurPart, elCurPart);
             } else {
-                this.root.appendChild(this.elCurPart);
+                root.appendChild(elCurPart);
             }
         }
 
     }
 
     private void newVoice(Voice voice) {
-        this.elCurScorePart = new Element("score-part");
+        elCurScorePart = new Element("score-part");
         Attribute atPart = new Attribute("id", voice.getMusicString());
-        this.elCurScorePart.addAttribute(atPart);
-        this.elCurScorePart.appendChild(new Element("part-name"));
-        Element elPL = this.root.getFirstChildElement("part-list");
-        elPL.appendChild(this.elCurScorePart);
-        this.elCurPart = new Element("part");
+        elCurScorePart.addAttribute(atPart);
+        elCurScorePart.appendChild(new Element("part-name"));
+        Element elPL = root.getFirstChildElement("part-list");
+        elPL.appendChild(elCurScorePart);
+        elCurPart = new Element("part");
         Attribute atPart2 = new Attribute(atPart);
-        this.elCurPart.addAttribute(atPart2);
-        this.elCurMeasure = null;
-        this.doFirstMeasure(true);
+        elCurPart.addAttribute(atPart2);
+        elCurMeasure = null;
+        doFirstMeasure(true);
     }
 
     public void instrumentEvent(Instrument instrument) {
@@ -202,7 +202,7 @@ public class MusicXmlRenderer implements ParserListener {
     }
 
     public void tempoEvent(Tempo tempo) {
-        this.doTempo(tempo);
+        doTempo(tempo);
     }
 
     private void doTempo(Tempo tempo) {
@@ -219,11 +219,11 @@ public class MusicXmlRenderer implements ParserListener {
         elMetronome.appendChild(elPerMinute);
         elDirectionType.appendChild(elMetronome);
         elDirection.appendChild(elDirectionType);
-        if (this.elCurMeasure == null) {
-            this.doFirstMeasure(true);
+        if (elCurMeasure == null) {
+            doFirstMeasure(true);
         }
 
-        this.elCurMeasure.appendChild(elDirection);
+        elCurMeasure.appendChild(elDirection);
     }
 
     public void layerEvent(Layer layer) {
@@ -233,7 +233,7 @@ public class MusicXmlRenderer implements ParserListener {
     }
 
     public void keySignatureEvent(KeySignature keySig) {
-        this.doKeySig(keySig);
+        doKeySig(keySig);
     }
 
     private void doKeySig(KeySignature keySig) {
@@ -244,11 +244,11 @@ public class MusicXmlRenderer implements ParserListener {
         Element elMode = new Element("mode");
         elMode.appendChild(keySig.getScale() == 1 ? "minor" : "major");
         elKey.appendChild(elMode);
-        if (this.elCurMeasure == null) {
-            this.doFirstMeasure(true);
+        if (elCurMeasure == null) {
+            doFirstMeasure(true);
         }
 
-        Element elAttributes = this.elCurMeasure.getFirstChildElement("attributes");
+        Element elAttributes = elCurMeasure.getFirstChildElement("attributes");
         boolean bNewAttributes = elAttributes == null;
         if (bNewAttributes) {
             elAttributes = new Element("attributes");
@@ -256,33 +256,33 @@ public class MusicXmlRenderer implements ParserListener {
 
         elAttributes.appendChild(elKey);
         if (bNewAttributes) {
-            this.elCurMeasure.appendChild(elAttributes);
+            elCurMeasure.appendChild(elAttributes);
         }
 
     }
 
     public void measureEvent(Measure measure) {
-        if (this.elCurMeasure == null) {
-            this.doFirstMeasure(false);
+        if (elCurMeasure == null) {
+            doFirstMeasure(false);
         } else {
-            this.finishCurrentMeasure();
-            this.newMeasure();
+            finishCurrentMeasure();
+            newMeasure();
         }
 
     }
 
     private void finishCurrentMeasure() {
-        if (this.elCurMeasure.getParent() == null) {
-            this.elCurPart.appendChild(this.elCurMeasure);
+        if (elCurMeasure.getParent() == null) {
+            elCurPart.appendChild(elCurMeasure);
         } else {
-            int sCurMNum = Integer.parseInt(this.elCurMeasure.getAttributeValue("number"));
-            Elements elMeasures = this.elCurPart.getChildElements("measure");
+            int sCurMNum = Integer.parseInt(elCurMeasure.getAttributeValue("number"));
+            Elements elMeasures = elCurPart.getChildElements("measure");
 
             for (int x = 0; x < elMeasures.size(); ++x) {
                 Element elM = elMeasures.get(x);
                 int sMNum = Integer.parseInt(elM.getAttributeValue("number"));
                 if (sMNum == sCurMNum) {
-                    this.elCurPart.replaceChild(elM, this.elCurMeasure);
+                    elCurPart.replaceChild(elM, elCurMeasure);
                 }
             }
         }
@@ -292,7 +292,7 @@ public class MusicXmlRenderer implements ParserListener {
     private void newMeasure() {
         int nextNumber = 1;
         boolean bNewMeasure = true;
-        Elements elMeasures = this.elCurPart.getChildElements("measure");
+        Elements elMeasures = elCurPart.getChildElements("measure");
         Element elLastMeasure;
         if (elMeasures.size() > 0) {
             elLastMeasure = elMeasures.get(elMeasures.size() - 1);
@@ -303,13 +303,12 @@ public class MusicXmlRenderer implements ParserListener {
                 nextNumber = Integer.parseInt(elNumber.getValue()) + 1;
             }
         } else {
-            bNewMeasure = this.elCurMeasure.getChildElements("note").size() > 0;
+            bNewMeasure = elCurMeasure.getChildElements("note").size() > 0;
         }
 
         if (bNewMeasure) {
-            this.elCurMeasure = new Element("measure");
-            this.elCurMeasure.addAttribute(
-                    new Attribute("number", Integer.toString(nextNumber)));
+            elCurMeasure = new Element("measure");
+            elCurMeasure.addAttribute(new Attribute("number", Integer.toString(nextNumber)));
         }
 
     }
@@ -327,23 +326,22 @@ public class MusicXmlRenderer implements ParserListener {
     }
 
     public void noteEvent(Note note) {
-        this.doNote(note, false);
+        doNote(note, false);
     }
 
     private void doNote(Note note, boolean bChord) {
-        //TODO - when duration > 0, replace the note with 0 duration instead of adding a new one
         Element elNote = new Element("note");
         if (bChord) {
             elNote.appendChild(new Element("chord"));
         }
 
+        int iAlter = 0;
         if (note.isRest()) {
             elNote.appendChild(new Element("rest"));
         } else {
             Element elPitch = new Element("pitch");
             Element elStep = new Element("step");
             String sPitch = Note.NOTES[note.getValue() % 12];
-            int iAlter = 0;
             if (sPitch.length() > 1) {
                 iAlter = sPitch.contains("#") ? 1 : -1;
                 sPitch = sPitch.substring(0, 1);
@@ -433,6 +431,11 @@ public class MusicXmlRenderer implements ParserListener {
         if (bDotted) {
             elNote.appendChild(new Element("dot"));
         }
+        if (iAlter != 0) {
+            Element elAccidental = new Element("accidental");
+            elAccidental.appendChild(iAlter == 1 ? "sharp" : "flat");
+            elNote.appendChild(elAccidental);
+        }
 
         if (bTied) {
             Element elNotations = new Element("notations");
@@ -453,14 +456,19 @@ public class MusicXmlRenderer implements ParserListener {
             elNote.appendChild(elNotations);
         }
 
-        this.elCurMeasure.appendChild(elNote);
+        if (iXMLDuration == 0) {
+            elCurMeasure.appendChild(elNote);
+        } else {
+            Optional<Element> elOldNote;// = root.getChildElements("part").flatMap(part -> part.getChildElements("measure").flatMap(measure -> measure.getChildElements("note))).findFirst(note -> noteMatches(note.getValue, 0));
+            elOldNote.ifPresent(oldNote -> elCurMeasure.replaceChild(oldNote, elNote));
+        }
     }
 
     public void sequentialNoteEvent(Note note) {
     }
 
     public void parallelNoteEvent(Note note) {
-        this.doNote(note, true);
+        doNote(note, true);
     }
 
     public static float PPMtoBPM(int ppm) {
