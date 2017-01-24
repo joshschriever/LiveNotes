@@ -4,7 +4,6 @@ import org.jfugue.MidiMessageRecipient;
 import org.jfugue.MidiParser;
 
 import jp.kshoji.javax.sound.midi.MidiMessage;
-import jp.kshoji.javax.sound.midi.ShortMessage;
 
 public class MidiToXMLRenderer implements MidiMessageRecipient {
 
@@ -23,10 +22,7 @@ public class MidiToXMLRenderer implements MidiMessageRecipient {
     @Override
     public void messageReady(MidiMessage midiMessage, long timeStamp) {
         parser.parse(midiMessage, timeStamp);
-
-        if (midiMessage.getStatus() == ShortMessage.NOTE_OFF) {
-            callbacks.onXMLUpdated();
-        }
+        callbacks.onXMLUpdated();
     }
 
     public String getXML() {

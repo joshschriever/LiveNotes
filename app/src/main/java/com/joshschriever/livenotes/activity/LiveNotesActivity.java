@@ -114,14 +114,16 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
         midiToXMLRenderer = new MidiToXMLRenderer(this);
         onXMLUpdated();
         //TODO - remove all below
-        try {
-            midiToXMLRenderer.messageReady(new ShortMessage(ShortMessage.NOTE_ON,
-                                                            48,
-                                                            1),
-                                           System.currentTimeMillis());
-        } catch (InvalidMidiDataException e) {
-            e.printStackTrace();
-        }
+        new Handler().postDelayed(() -> {
+            try {
+                midiToXMLRenderer.messageReady(new ShortMessage(ShortMessage.NOTE_ON,
+                                                                48,
+                                                                1),
+                                               System.currentTimeMillis());
+            } catch (InvalidMidiDataException e) {
+                e.printStackTrace();
+            }
+        }, 1250);
         new Handler().postDelayed(() -> {
             try {
                 midiToXMLRenderer.messageReady(new ShortMessage(ShortMessage.NOTE_OFF,
@@ -131,7 +133,7 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
             } catch (InvalidMidiDataException e) {
                 e.printStackTrace();
             }
-        }, 100);
+        }, 1800);
         new Handler().postDelayed(() -> {
             try {
                 midiToXMLRenderer.messageReady(new ShortMessage(ShortMessage.NOTE_ON,
@@ -141,7 +143,7 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
             } catch (InvalidMidiDataException e) {
                 e.printStackTrace();
             }
-        }, 2110);
+        }, 1260);
         new Handler().postDelayed(() -> {
             try {
                 midiToXMLRenderer.messageReady(new ShortMessage(ShortMessage.NOTE_OFF,
@@ -151,7 +153,7 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
             } catch (InvalidMidiDataException e) {
                 e.printStackTrace();
             }
-        }, 2150);
+        }, 1300);
     }
 
     @Override

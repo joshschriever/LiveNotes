@@ -14,7 +14,12 @@ import org.jfugue.Tempo;
 import org.jfugue.Time;
 import org.jfugue.Voice;
 
-import java8.util.Optional;
+import java8.util.Spliterator;
+import java8.util.Spliterators.AbstractSpliterator;
+import java8.util.function.Consumer;
+import java8.util.function.Predicate;
+import java8.util.stream.Stream;
+import java8.util.stream.StreamSupport;
 import nu.xom.Attribute;
 import nu.xom.DocType;
 import nu.xom.Document;
@@ -335,18 +340,13 @@ public class MusicXmlRenderer implements ParserListener {
             elNote.appendChild(new Element("chord"));
         }
 
-        int iAlter = 0;
+        int iAlter = alterForNoteValue(note.getValue());
         if (note.isRest()) {
             elNote.appendChild(new Element("rest"));
         } else {
             Element elPitch = new Element("pitch");
             Element elStep = new Element("step");
-            String sPitch = Note.NOTES[note.getValue() % 12];
-            if (sPitch.length() > 1) {
-                iAlter = sPitch.contains("#") ? 1 : -1;
-                sPitch = sPitch.substring(0, 1);
-            }
-            elStep.appendChild(sPitch);
+            elStep.appendChild(stepForNoteValue(note.getValue()));
             elPitch.appendChild(elStep);
 
             if (iAlter != 0) {
@@ -356,7 +356,7 @@ public class MusicXmlRenderer implements ParserListener {
             }
 
             Element elOctave = new Element("octave");
-            elOctave.appendChild(Integer.toString(note.getValue() / 12));
+            elOctave.appendChild(octaveForNoteValue(note.getValue()));
             elPitch.appendChild(elOctave);
             elNote.appendChild(elPitch);
         }
@@ -401,7 +401,8 @@ public class MusicXmlRenderer implements ParserListener {
         } else if (decimalDuration <= 0.046875D) {
             sType = "32nd";
             bDotted = true;
-        } else*/ if (decimalDuration <= 0.0625D) {
+        } else*/
+        if (decimalDuration <= 0.0625D) {
             sType = "16th";
         } else if (decimalDuration <= 0.09375D) {
             sType = "16th";
@@ -459,9 +460,25 @@ public class MusicXmlRenderer implements ParserListener {
         if (iXMLDuration == 0) {
             elCurMeasure.appendChild(elNote);
         } else {
-            Optional<Element> elOldNote;// = root.getChildElements("part").flatMap(part -> part.getChildElements("measure").flatMap(measure -> measure.getChildElements("note))).findFirst(note -> noteMatches(note.getValue, 0));
-            elOldNote.ifPresent(oldNote -> elCurMeasure.replaceChild(oldNote, elNote));
+            stream(root.getChildElements("part"))
+                    .flatMap(part -> stream(part.getChildElements("measure"))
+                            .flatMap(measure -> stream(measure.getChildElements("note"))))
+                    .filter(noteMatches(note.getValue(), 0)).findFirst()
+                    .ifPresent(elOldNote -> elCurMeasure.replaceChild(elOldNote, elNote));
         }
+    }
+
+    private static String stepForNoteValue(int value) {
+        return Note.NOTES[value % 12].substring(0, 1);
+    }
+
+    private static int alterForNoteValue(int value) {
+        String pitch = Note.NOTES[value % 12];
+        return pitch.length() > 1 ? pitch.contains("#") ? 1 : -1 : 0;
+    }
+
+    private static String octaveForNoteValue(int value) {
+        return Integer.toString(value / 12);
     }
 
     public void sequentialNoteEvent(Note note) {
@@ -473,6 +490,48 @@ public class MusicXmlRenderer implements ParserListener {
 
     public static float PPMtoBPM(int ppm) {
         return 14400.0F / (float) ppm;
+    }
+
+    private static Predicate<Element> noteMatches(int value, int duration) {
+        return elNote -> pitchMatches(elNote.getFirstChildElement("pitch"), value)
+                && elNote.getFirstChildElement("duration")
+                         .getValue().equals(Integer.toString(duration));
+    }
+
+    private static boolean pitchMatches(Element elPitch, int value) {
+        return elPitch.getFirstChildElement("step").getValue()
+                      .equals(stepForNoteValue(value))
+                && elPitch.getFirstChildElement("octave").getValue()
+                          .equals(octaveForNoteValue(value))
+                && (alterForNoteValue(value) == 0
+                || elPitch.getFirstChildElement("alter").getValue()
+                          .equals(Integer.toString(alterForNoteValue(value))));
+    }
+
+    private static Stream<Element> stream(Elements elements) {
+        return StreamSupport.stream(new ElementsSpliterator(elements), false);
+    }
+
+    private static class ElementsSpliterator extends AbstractSpliterator<Element> {
+
+        private Elements elements;
+        private int current = 0;
+
+        private ElementsSpliterator(Elements elements) {
+            super(elements.size(), Spliterator.ORDERED | Spliterator.SIZED | Spliterator.IMMUTABLE);
+            this.elements = elements;
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super Element> action) {
+            if (current < elements.size()) {
+                action.accept(elements.get(current));
+                current++;
+                return true;
+            } else {
+                return false;
+            }
+        }
     }
 
 }
