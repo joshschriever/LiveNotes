@@ -213,7 +213,7 @@ public class MusicXmlRenderer implements ParserListener {
         Element elBeatUnit = new Element("beat-unit");
         elBeatUnit.appendChild("quarter");
         Element elPerMinute = new Element("per-minute");
-        Integer iBPM = Integer.valueOf((new Float(PPMtoBPM(tempo.getTempo()))).intValue());
+        Integer iBPM = Float.valueOf(PPMtoBPM(tempo.getTempo())).intValue();
         elPerMinute.appendChild(iBPM.toString());
         elMetronome.appendChild(elBeatUnit);
         elMetronome.appendChild(elPerMinute);
@@ -290,17 +290,17 @@ public class MusicXmlRenderer implements ParserListener {
     }
 
     private void newMeasure() {
-        Integer nextNumber = Integer.valueOf(1);
+        int nextNumber = 1;
         boolean bNewMeasure = true;
         Elements elMeasures = this.elCurPart.getChildElements("measure");
-        Element elLastMeasure = null;
+        Element elLastMeasure;
         if (elMeasures.size() > 0) {
             elLastMeasure = elMeasures.get(elMeasures.size() - 1);
             Attribute elNumber = elLastMeasure.getAttribute("number");
             if (elLastMeasure.getChildElements("note").size() < 1) {
                 bNewMeasure = false;
             } else {
-                nextNumber = Integer.valueOf(Integer.parseInt(elNumber.getValue()) + 1);
+                nextNumber = Integer.parseInt(elNumber.getValue()) + 1;
             }
         } else {
             bNewMeasure = this.elCurMeasure.getChildElements("note").size() > 0;
@@ -309,7 +309,7 @@ public class MusicXmlRenderer implements ParserListener {
         if (bNewMeasure) {
             this.elCurMeasure = new Element("measure");
             this.elCurMeasure.addAttribute(
-                    new Attribute("number", Integer.toString(nextNumber.intValue())));
+                    new Attribute("number", Integer.toString(nextNumber)));
         }
 
     }
@@ -337,155 +337,120 @@ public class MusicXmlRenderer implements ParserListener {
             elNote.appendChild(new Element("chord"));
         }
 
-        Element elDuration;
-        int iXMLDuration;
         if (note.isRest()) {
-            elDuration = new Element("rest");
-            elNote.appendChild(elDuration);
+            elNote.appendChild(new Element("rest"));
         } else {
-            elDuration = new Element("pitch");
-            Element dDuration = new Element("step");
+            Element elPitch = new Element("pitch");
+            Element elStep = new Element("step");
             String sPitch = Note.NOTES[note.getValue() % 12];
-            iXMLDuration = 0;
+            int iAlter = 0;
             if (sPitch.length() > 1) {
-                iXMLDuration = sPitch.contains("#") ? 1 : -1;
+                iAlter = sPitch.contains("#") ? 1 : -1;
                 sPitch = sPitch.substring(0, 1);
             }
+            elStep.appendChild(sPitch);
+            elPitch.appendChild(elStep);
 
-            dDuration.appendChild(sPitch);
-            elDuration.appendChild(dDuration);
-            Element bDoNotation;
-            if (iXMLDuration != 0) {
-                bDoNotation = new Element("alter");
-                bDoNotation.appendChild(Integer.toString(iXMLDuration));
-                elDuration.appendChild(bDoNotation);
+            if (iAlter != 0) {
+                Element elAlter = new Element("alter");
+                elAlter.appendChild(Integer.toString(iAlter));
+                elPitch.appendChild(elAlter);
             }
 
-            bDoNotation = new Element("octave");
-            bDoNotation.appendChild(Integer.toString(note.getValue() / 12));
-            elDuration.appendChild(bDoNotation);
-            elNote.appendChild(elDuration);
+            Element elOctave = new Element("octave");
+            elOctave.appendChild(Integer.toString(note.getValue() / 12));
+            elPitch.appendChild(elOctave);
+            elNote.appendChild(elPitch);
         }
 
-        elDuration = new Element("duration");
-        double dDuration1 = note.getDecimalDuration();
-        iXMLDuration = (int) (dDuration1 * 1024.0D * 4.0D / 256.0D);
+        Element elDuration = new Element("duration");
+        double decimalDuration = note.getDecimalDuration();
+        int iXMLDuration = (int) (decimalDuration * 1024.0D * 4.0D / 256.0D);
         elDuration.appendChild(Integer.toString(iXMLDuration));
         elNote.appendChild(elDuration);
-        boolean bDoNotation1 = false;
-        Element sDuration;
-        Attribute bDotted;
+
+        Element elTie;
+        Attribute atTieType;
+        boolean bTied = false;
         if (note.isStartOfTie()) {
-            sDuration = new Element("tie");
-            bDotted = new Attribute("type", "start");
-            sDuration.addAttribute(bDotted);
-            elNote.appendChild(sDuration);
-            bDoNotation1 = true;
+            elTie = new Element("tie");
+            atTieType = new Attribute("type", "start");
+            elTie.addAttribute(atTieType);
+            elNote.appendChild(elTie);
+            bTied = true;
         } else if (note.isEndOfTie()) {
-            sDuration = new Element("tie");
-            bDotted = new Attribute("type", "stop");
-            sDuration.addAttribute(bDotted);
-            elNote.appendChild(sDuration);
-            bDoNotation1 = true;
+            elTie = new Element("tie");
+            atTieType = new Attribute("type", "stop");
+            elTie.addAttribute(atTieType);
+            elNote.appendChild(elTie);
+            bTied = true;
         }
 
-        boolean bDotted1 = false;
-        String sDuration1;
-        if (dDuration1 <= 0.0625D) {
-            sDuration1 = "16th";
-        } else if (dDuration1 <= 0.09375D) {
-            sDuration1 = "16th";
-            bDotted1 = true;
-        } else if (dDuration1 <= 0.125D) {
-            sDuration1 = "eighth";
-        } else if (dDuration1 <= 0.1875D) {
-            sDuration1 = "eighth";
-            bDotted1 = true;
-        } else if (dDuration1 <= 0.25D) {
-            sDuration1 = "quarter";
-        } else if (dDuration1 <= 0.375D) {
-            sDuration1 = "quarter";
-            bDotted1 = true;
-        } else if (dDuration1 <= 0.5D) {
-            sDuration1 = "half";
-        } else if (dDuration1 <= 0.75D) {
-            sDuration1 = "half";
-            bDotted1 = true;
+        String sType;
+        boolean bDotted = false;
+        /*if (decimalDuration <= 0.0078125D) {
+            sType = "128th";
+        } else if (decimalDuration <= 0.01171875D) {
+            sType = "128th";
+            bDotted = true;
+        } else if (decimalDuration <= 0.015625D) {
+            sType = "64th";
+        } else if (decimalDuration <= 0.0234375D) {
+            sType = "64th";
+            bDotted = true;
+        } else if (decimalDuration <= 0.03125D) {
+            sType = "32nd";
+        } else if (decimalDuration <= 0.046875D) {
+            sType = "32nd";
+            bDotted = true;
+        } else*/ if (decimalDuration <= 0.0625D) {
+            sType = "16th";
+        } else if (decimalDuration <= 0.09375D) {
+            sType = "16th";
+            bDotted = true;
+        } else if (decimalDuration <= 0.125D) {
+            sType = "eighth";
+        } else if (decimalDuration <= 0.1875D) {
+            sType = "eighth";
+            bDotted = true;
+        } else if (decimalDuration <= 0.25D) {
+            sType = "quarter";
+        } else if (decimalDuration <= 0.375D) {
+            sType = "quarter";
+            bDotted = true;
+        } else if (decimalDuration <= 0.5D) {
+            sType = "half";
+        } else if (decimalDuration <= 0.75D) {
+            sType = "half";
+            bDotted = true;
         } else {
-            sDuration1 = "whole";
+            sType = "whole";
         }
-
-//        if (dDuration1 == 1.0D) {
-//            sDuration1 = "whole";
-//        } else if (dDuration1 == 0.75D) {
-//            sDuration1 = "half";
-//            bDotted1 = true;
-//        } else if (dDuration1 == 0.5D) {
-//            sDuration1 = "half";
-//        } else if (dDuration1 == 0.375D) {
-//            sDuration1 = "quarter";
-//            bDotted1 = true;
-//        } else if (dDuration1 == 0.25D) {
-//            sDuration1 = "quarter";
-//        } else if (dDuration1 == 0.1875D) {
-//            sDuration1 = "eighth";
-//            bDotted1 = true;
-//        } else if (dDuration1 == 0.125D) {
-//            sDuration1 = "eighth";
-//        } else if (dDuration1 == 0.09375D) {
-//            sDuration1 = "16th";
-//            bDotted1 = true;
-//        } else if (dDuration1 == 0.0625D) {
-//            sDuration1 = "16th";
-//        } else if (dDuration1 == 0.046875D) {
-//            sDuration1 = "32nd";
-//            bDotted1 = true;
-//        } else if (dDuration1 == 0.03125D) {
-//            sDuration1 = "32nd";
-//        } else if (dDuration1 == 0.0234375D) {
-//            sDuration1 = "64th";
-//            bDotted1 = true;
-//        } else if (dDuration1 == 0.015625D) {
-//            sDuration1 = "64th";
-//        } else if (dDuration1 == 0.01171875D) {
-//            sDuration1 = "128th";
-//            bDotted1 = true;
-//        } else if (dDuration1 == 0.0078125D) {
-//            sDuration1 = "128th";
-//        } else {
-//            sDuration1 = "/" + Double.toString(dDuration1);
-//        }
 
         Element elType = new Element("type");
-        elType.appendChild(sDuration1);
+        elType.appendChild(sType);
         elNote.appendChild(elType);
-        Element elNotations;
-        if (bDotted1) {
-            elNotations = new Element("dot");
-            elNote.appendChild(elNotations);
+        if (bDotted) {
+            elNote.appendChild(new Element("dot"));
         }
 
-        if (bDoNotation1) {
-            elNotations = new Element("notations");
+        if (bTied) {
+            Element elNotations = new Element("notations");
             Element elTied;
-            Attribute atStart;
+            Attribute atType;
             if (note.isStartOfTie()) {
                 elTied = new Element("tied");
-                atStart = new Attribute("type", "start");
-                elTied.addAttribute(atStart);
+                atType = new Attribute("type", "start");
+                elTied.addAttribute(atType);
                 elNotations.appendChild(elTied);
             } else if (note.isEndOfTie()) {
                 elTied = new Element("tied");
-                atStart = new Attribute("type", "stop");
-                elTied.addAttribute(atStart);
+                atType = new Attribute("type", "stop");
+                elTied.addAttribute(atType);
                 elNotations.appendChild(elTied);
             }
 
             elNote.appendChild(elNotations);
-        }
-
-        if (this.elCurMeasure == null) {
-            this.doFirstMeasure(true);
         }
 
         this.elCurMeasure.appendChild(elNote);
@@ -499,7 +464,7 @@ public class MusicXmlRenderer implements ParserListener {
     }
 
     public static float PPMtoBPM(int ppm) {
-        return (new Float(14400.0F / (float) ppm)).floatValue();
+        return 14400.0F / (float) ppm;
     }
 
 }
