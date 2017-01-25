@@ -6,11 +6,13 @@ import android.media.midi.MidiDeviceInfo;
 import android.media.midi.MidiManager;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import static java8.util.J8Arrays.stream;
 
 public class MidiReceiver extends android.media.midi.MidiReceiver
-        implements MidiManager.OnDeviceOpenedListener {
+        implements MidiManager.OnDeviceOpenedListener,
+        MidiConstants {
 
     private android.media.midi.MidiReceiver listener;
 
@@ -31,7 +33,13 @@ public class MidiReceiver extends android.media.midi.MidiReceiver
 
     @Override
     public void onSend(byte[] msg, int offset, int count, long timestamp) throws IOException {
-        //TODO - format data using something like MidiFramer and then send to listener
+        for (int i = offset; i < offset + count; i++) {
+            byte status = (byte) (msg[i] & STATUS_COMMAND_MASK);
+            if (status == STATUS_NOTE_ON || status == STATUS_NOTE_OFF) {
+                listener.send(Arrays.copyOfRange(msg, i, i + 3), 0, 3, timestamp);
+                i += 2;
+            }
+        }
     }
 
 }

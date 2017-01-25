@@ -124,7 +124,7 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
     private void initializeMidi() {
         new MidiReceiver(this, new MidiAdapter(midiToXMLRenderer));
     }
-
+//TODO - timing - it thinks everything is a whole note
     @Override
     public void onXMLUpdated() {
         setScoreXML(midiToXMLRenderer.getXML());
