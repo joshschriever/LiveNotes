@@ -4,9 +4,9 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.util.Log;
+import android.view.WindowManager.LayoutParams;
 import android.widget.ScrollView;
 
 import com.joshschriever.livenotes.R;
@@ -16,8 +16,6 @@ import com.joshschriever.livenotes.task.SingleParamResultlessTask;
 import java.util.ArrayList;
 import java.util.List;
 
-import jp.kshoji.javax.sound.midi.InvalidMidiDataException;
-import jp.kshoji.javax.sound.midi.ShortMessage;
 import uk.co.dolphin_com.seescoreandroid.SeeScoreView;
 import uk.co.dolphin_com.sscore.Component;
 import uk.co.dolphin_com.sscore.LoadOptions;
@@ -79,21 +77,26 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
     }
 
     private void initialize() {
+        initializeWindow();
         initializeScoreView();
         initializeScore();
+    }
+
+    private void initializeWindow() {
+        getWindow().addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON | LayoutParams.FLAG_FULLSCREEN);
     }
 
     private void initializeScoreView() {
         scoreView = new SeeScoreView(this,
                                      getAssets(),
-                                     scale -> Log.d("ZoomNotification", "scale: " + scale),
+                                     scale -> Log.i("ZoomNotification", "scale: " + scale),
                                      new SeeScoreView.TapNotification() {
                                          @Override
                                          public void tap(int systemIndex,
                                                          int partIndex,
                                                          int barIndex,
                                                          Component[] components) {
-                                             Log.d("TapNotification", "tap");
+                                             Log.i("TapNotification", "tap");
                                          }
 
                                          @Override
@@ -101,7 +104,7 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
                                                              int partIndex,
                                                              int barIndex,
                                                              Component[] components) {
-                                             Log.d("TapNotification", "longTap");
+                                             Log.i("TapNotification", "longTap");
                                          }
                                      });
 
@@ -113,47 +116,6 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
     private void initializeScore() {
         midiToXMLRenderer = new MidiToXMLRenderer(this);
         onXMLUpdated();
-        //TODO - remove all below
-        new Handler().postDelayed(() -> {
-            try {
-                midiToXMLRenderer.messageReady(new ShortMessage(ShortMessage.NOTE_ON,
-                                                                48,
-                                                                1),
-                                               System.currentTimeMillis());
-            } catch (InvalidMidiDataException e) {
-                e.printStackTrace();
-            }
-        }, 1250);
-        new Handler().postDelayed(() -> {
-            try {
-                midiToXMLRenderer.messageReady(new ShortMessage(ShortMessage.NOTE_OFF,
-                                                                48,
-                                                                1),
-                                               System.currentTimeMillis());
-            } catch (InvalidMidiDataException e) {
-                e.printStackTrace();
-            }
-        }, 1900);
-        new Handler().postDelayed(() -> {
-            try {
-                midiToXMLRenderer.messageReady(new ShortMessage(ShortMessage.NOTE_ON,
-                                                                49,
-                                                                1),
-                                               System.currentTimeMillis());
-            } catch (InvalidMidiDataException e) {
-                e.printStackTrace();
-            }
-        }, 1600);
-        new Handler().postDelayed(() -> {
-            try {
-                midiToXMLRenderer.messageReady(new ShortMessage(ShortMessage.NOTE_OFF,
-                                                                49,
-                                                                1),
-                                               System.currentTimeMillis());
-            } catch (InvalidMidiDataException e) {
-                e.printStackTrace();
-            }
-        }, 1750);
     }
 
     @Override
@@ -162,14 +124,13 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
     }
 
     private void setScoreXML(String newXML) {
-        Log.d("xml:", newXML);//TODO - remove
+        Log.i("setScoreXML", newXML);
         new SingleParamResultlessTask<String>() {
             @Override
             protected void doInBackground(String xml) {
                 try {
                     setScore(SScore.loadXMLData(xml.getBytes(), LOAD_OPTIONS));
                 } catch (ScoreException e) {
-                    Log.e("ScoreException", e.getMessage());
                     e.printStackTrace();
                 }
             }
