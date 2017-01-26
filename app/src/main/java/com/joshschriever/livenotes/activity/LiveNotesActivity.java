@@ -44,6 +44,7 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
     private SeeScoreView scoreView;
 
     private MidiToXMLRenderer midiToXMLRenderer;
+    private MidiReceiver midiReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -121,7 +122,7 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
     }
 
     private void initializeMidi() {
-        new MidiReceiver(this, new MidiAdapter(midiToXMLRenderer));
+        midiReceiver = new MidiReceiver(this, new MidiAdapter(midiToXMLRenderer));
     }
 
     @Override
@@ -143,6 +144,14 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
                            stream(new Boolean[score.numParts()])
                                    .map(__ -> Boolean.TRUE).collect(toList()),
                            1.0f);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (midiReceiver != null) {
+            midiReceiver.close();
+        }
+        super.onDestroy();
     }
 
 }
