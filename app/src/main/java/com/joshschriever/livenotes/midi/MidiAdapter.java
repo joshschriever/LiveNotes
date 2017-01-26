@@ -27,7 +27,7 @@ public class MidiAdapter extends MidiReceiver implements MidiConstants {
                                                                : ShortMessage.NOTE_OFF,
                                                                msg[1] - 12,
                                                                msg[2]),
-                                              timestamp);
+                                              timestamp / 1000000);
             } catch (InvalidMidiDataException e) {
                 throw new IOException(e.getMessage(), e.getCause());
             }

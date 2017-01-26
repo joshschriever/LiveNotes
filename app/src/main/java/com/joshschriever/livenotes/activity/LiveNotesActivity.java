@@ -13,7 +13,6 @@ import com.joshschriever.livenotes.R;
 import com.joshschriever.livenotes.midi.MidiAdapter;
 import com.joshschriever.livenotes.midi.MidiReceiver;
 import com.joshschriever.livenotes.musicxml.MidiToXMLRenderer;
-import com.joshschriever.livenotes.task.SingleParamResultlessTask;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -124,7 +123,7 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
     private void initializeMidi() {
         new MidiReceiver(this, new MidiAdapter(midiToXMLRenderer));
     }
-//TODO - timing - it thinks everything is a whole note
+
     @Override
     public void onXMLUpdated() {
         setScoreXML(midiToXMLRenderer.getXML());
@@ -132,16 +131,11 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
 
     private void setScoreXML(String newXML) {
         Log.i("setScoreXML", newXML);
-        new SingleParamResultlessTask<String>() {
-            @Override
-            protected void doInBackground(String xml) {
-                try {
-                    setScore(SScore.loadXMLData(xml.getBytes(), LOAD_OPTIONS));
-                } catch (ScoreException e) {
-                    e.printStackTrace();
-                }
-            }
-        }.execute(newXML);
+        try {
+            setScore(SScore.loadXMLData(newXML.getBytes(), LOAD_OPTIONS));
+        } catch (ScoreException e) {
+            e.printStackTrace();
+        }
     }
 
     private void setScore(SScore score) {
