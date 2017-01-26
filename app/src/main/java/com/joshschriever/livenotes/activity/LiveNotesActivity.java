@@ -117,7 +117,7 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
     }
 
     private void initializeScore() {
-        midiToXMLRenderer = new MidiToXMLRenderer(this);
+        midiToXMLRenderer = new MidiToXMLRenderer(this, 100);
         onXMLUpdated();
     }
 

@@ -29,27 +29,32 @@ import nu.xom.Elements;
 // Forked from JFugue
 public class MusicXmlRenderer implements ParserListener {
 
+    private static final int DEFAULT_TEMPO = 120;
+    private static final int DIVISIONS_PER_QUARTER = 24;
+
     private Document document;
     private Element root = new Element("score-partwise");
     private Element elCurMeasure;
-    private Element elPartList;
-    private Element elCurScorePart;
     private Element elCurPart;
 
-    public MusicXmlRenderer() {
+    private int tempo;
+
+    public MusicXmlRenderer(int tempo) {
         Element elID = new Element("identification");
         Element elCreator = new Element("creator");
         elCreator.addAttribute(new Attribute("type", "software"));
         elCreator.appendChild("JFugue MusicXMLRenderer");
         elID.appendChild(elCreator);
         root.appendChild(elID);
-        elPartList = new Element("part-list");
-        root.appendChild(elPartList);
+        root.appendChild(new Element("part-list"));
         document = new Document(root);
         document.insertChild(new DocType("score-partwise",
                                          "-//Recordare//DTD MusicXML 1.1 Partwise//EN",
                                          "http://www.musicxml.org/dtds/partwise.dtd"),
                              0);
+
+        this.tempo = tempo;
+        doFirstMeasure(true);
     }
 
     public String getMusicXMLString() {
@@ -57,11 +62,11 @@ public class MusicXmlRenderer implements ParserListener {
                                                       "<duration>1</duration>");
     }
 
-    protected String getInternalMusicXMLString() {
+    private String getInternalMusicXMLString() {
         return getMusicXMLDoc().toXML();
     }
 
-    public Document getMusicXMLDoc() {
+    private Document getMusicXMLDoc() {
         finishCurrentVoice();
         Elements elDocParts = root.getChildElements("part");
 
@@ -79,7 +84,7 @@ public class MusicXmlRenderer implements ParserListener {
         return document;
     }
 
-    public void doFirstMeasure(boolean bAddDefaults) {
+    private void doFirstMeasure(boolean bAddDefaults) {
         if (elCurPart == null) {
             newVoice(new Voice((byte) 0));
         }
@@ -93,7 +98,7 @@ public class MusicXmlRenderer implements ParserListener {
             Element elLine;
             if (bAddDefaults) {
                 elClef = new Element("divisions");
-                elClef.appendChild(Integer.toString(4));
+                elClef.appendChild(Integer.toString(DIVISIONS_PER_QUARTER));
                 elAttributes.appendChild(elClef);
 
                 Element elKey = new Element("key");
@@ -122,14 +127,10 @@ public class MusicXmlRenderer implements ParserListener {
                 elClef.appendChild(elSign);
                 elClef.appendChild(elLine);
                 elAttributes.appendChild(elClef);
-            }
 
-            if (elAttributes.getChildCount() > 0) {
                 elCurMeasure.appendChild(elAttributes);
-            }
 
-            if (bAddDefaults) {
-                doTempo(new Tempo(120));
+                doTempo(new Tempo(tempo));
             }
         }
     }
@@ -190,12 +191,12 @@ public class MusicXmlRenderer implements ParserListener {
     }
 
     private void newVoice(Voice voice) {
-        elCurScorePart = new Element("score-part");
+        Element elScorePart = new Element("score-part");
         Attribute atPart = new Attribute("id", voice.getMusicString());
-        elCurScorePart.addAttribute(atPart);
-        elCurScorePart.appendChild(new Element("part-name"));
+        elScorePart.addAttribute(atPart);
+        elScorePart.appendChild(new Element("part-name"));
         Element elPL = root.getFirstChildElement("part-list");
-        elPL.appendChild(elCurScorePart);
+        elPL.appendChild(elScorePart);
         elCurPart = new Element("part");
         Attribute atPart2 = new Attribute(atPart);
         elCurPart.addAttribute(atPart2);
@@ -216,6 +217,8 @@ public class MusicXmlRenderer implements ParserListener {
     }
 
     private void doTempo(Tempo tempo) {
+        this.tempo = tempo.getTempo();
+
         Element elDirection = new Element("direction");
         elDirection.addAttribute(new Attribute("placement", "above"));
         Element elDirectionType = new Element("direction-type");
@@ -223,8 +226,7 @@ public class MusicXmlRenderer implements ParserListener {
         Element elBeatUnit = new Element("beat-unit");
         elBeatUnit.appendChild("quarter");
         Element elPerMinute = new Element("per-minute");
-        Integer iBPM = Float.valueOf(PPMtoBPM(tempo.getTempo())).intValue();
-        elPerMinute.appendChild(iBPM.toString());
+        elPerMinute.appendChild(Integer.toString(tempo.getTempo()));
         elMetronome.appendChild(elBeatUnit);
         elMetronome.appendChild(elPerMinute);
         elDirectionType.appendChild(elMetronome);
@@ -367,8 +369,8 @@ public class MusicXmlRenderer implements ParserListener {
         }
 
         Element elDuration = new Element("duration");
-        double decimalDuration = note.getDecimalDuration();
-        int iXMLDuration = (int) (decimalDuration * 1024.0D * 4.0D / 256.0D);
+        double decimalDuration = note.getDecimalDuration() * tempo / DEFAULT_TEMPO;
+        int iXMLDuration = (int) (decimalDuration * DIVISIONS_PER_QUARTER);
         elDuration.appendChild(Integer.toString(iXMLDuration));
         elNote.appendChild(elDuration);
 
@@ -391,40 +393,32 @@ public class MusicXmlRenderer implements ParserListener {
 
         String sType;
         boolean bDotted = false;
-        /*if (decimalDuration <= 0.0078125D) {
-            sType = "128th";
-        } else if (decimalDuration <= 0.01171875D) {
-            sType = "128th";
-            bDotted = true;
-        } else if (decimalDuration <= 0.015625D) {
-            sType = "64th";
-        } else if (decimalDuration <= 0.0234375D) {
-            sType = "64th";
-            bDotted = true;
-        } else if (decimalDuration <= 0.03125D) {
-            sType = "32nd";
-        } else if (decimalDuration <= 0.046875D) {
-            sType = "32nd";
-            bDotted = true;
-        } else*/
-        if (decimalDuration <= 0.0625D) {
+        if (iXMLDuration <= ((DIVISIONS_PER_QUARTER / 4)
+                + (DIVISIONS_PER_QUARTER * 3 / 8)) / 2) {
             sType = "16th";
-        } else if (decimalDuration <= 0.09375D) {
+        } else if (iXMLDuration <= ((DIVISIONS_PER_QUARTER * 3 / 8)
+                + (DIVISIONS_PER_QUARTER / 2)) / 2) {
             sType = "16th";
             bDotted = true;
-        } else if (decimalDuration <= 0.125D) {
+        } else if (iXMLDuration <= ((DIVISIONS_PER_QUARTER / 2)
+                + (DIVISIONS_PER_QUARTER * 3 / 4)) / 2) {
             sType = "eighth";
-        } else if (decimalDuration <= 0.1875D) {
+        } else if (iXMLDuration <= ((DIVISIONS_PER_QUARTER * 3 / 4)
+                + (DIVISIONS_PER_QUARTER)) / 2) {
             sType = "eighth";
             bDotted = true;
-        } else if (decimalDuration <= 0.25D) {
+        } else if (iXMLDuration <= ((DIVISIONS_PER_QUARTER)
+                + (DIVISIONS_PER_QUARTER * 3 / 2)) / 2) {
             sType = "quarter";
-        } else if (decimalDuration <= 0.375D) {
+        } else if (iXMLDuration <= ((DIVISIONS_PER_QUARTER * 3 / 2)
+                + (DIVISIONS_PER_QUARTER * 2)) / 2) {
             sType = "quarter";
             bDotted = true;
-        } else if (decimalDuration <= 0.5D) {
+        } else if (iXMLDuration <= ((DIVISIONS_PER_QUARTER * 2)
+                + (DIVISIONS_PER_QUARTER * 3)) / 2) {
             sType = "half";
-        } else if (decimalDuration <= 0.75D) {
+        } else if (iXMLDuration <= ((DIVISIONS_PER_QUARTER * 3)
+                + (DIVISIONS_PER_QUARTER * 4)) / 2) {
             sType = "half";
             bDotted = true;
         } else {
@@ -491,10 +485,6 @@ public class MusicXmlRenderer implements ParserListener {
 
     public void parallelNoteEvent(Note note) {
         doNote(note, true);
-    }
-
-    public static float PPMtoBPM(int ppm) {
-        return 14400.0F / (float) ppm;
     }
 
     private static Predicate<Element> noteMatches(int value, int duration) {
