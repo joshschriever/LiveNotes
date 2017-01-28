@@ -1,7 +1,5 @@
 package com.joshschriever.livenotes.midi;
 
-import android.media.midi.MidiReceiver;
-
 import org.jfugue.MidiMessageRecipient;
 
 import java.io.IOException;
@@ -9,11 +7,11 @@ import java.io.IOException;
 import jp.kshoji.javax.sound.midi.InvalidMidiDataException;
 import jp.kshoji.javax.sound.midi.ShortMessage;
 
-public class MidiAdapter extends MidiReceiver implements MidiConstants {
+public class MidiMessageAdapter extends CloseableReceiver implements MidiConstants {
 
     private MidiMessageRecipient messageRecipient;
 
-    public MidiAdapter(MidiMessageRecipient messageRecipient) {
+    public MidiMessageAdapter(MidiMessageRecipient messageRecipient) {
         this.messageRecipient = messageRecipient;
     }
 
@@ -32,6 +30,10 @@ public class MidiAdapter extends MidiReceiver implements MidiConstants {
                 throw new IOException(e.getMessage(), e.getCause());
             }
         }
+    }
+
+    @Override
+    public void close() throws IOException {
     }
 
 }

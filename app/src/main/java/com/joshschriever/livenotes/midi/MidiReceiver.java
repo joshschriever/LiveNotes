@@ -5,6 +5,7 @@ import android.media.midi.MidiDevice;
 import android.media.midi.MidiDeviceInfo;
 import android.media.midi.MidiManager;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -12,12 +13,13 @@ import static java8.util.J8Arrays.stream;
 
 public class MidiReceiver extends android.media.midi.MidiReceiver
         implements MidiManager.OnDeviceOpenedListener,
+        Closeable,
         MidiConstants {
 
-    private android.media.midi.MidiReceiver listener;
+    private CloseableReceiver listener;
     private MidiDevice device;
 
-    public MidiReceiver(Context context, android.media.midi.MidiReceiver listener) {
+    public MidiReceiver(Context context, CloseableReceiver listener) {
         this.listener = listener;
         MidiManager midiManager = (MidiManager) context.getSystemService(Context.MIDI_SERVICE);
         stream(midiManager.getDevices())
@@ -61,13 +63,15 @@ public class MidiReceiver extends android.media.midi.MidiReceiver
         }
     }
 
+    @Override
     public void close() {
-        if (device != null) {
-            try {
+        try {
+            listener.close();
+            if (device != null) {
                 device.close();
-            } catch (IOException e) {
-                e.printStackTrace();
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

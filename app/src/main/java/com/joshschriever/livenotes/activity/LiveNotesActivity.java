@@ -10,7 +10,9 @@ import android.view.WindowManager.LayoutParams;
 import android.widget.ScrollView;
 
 import com.joshschriever.livenotes.R;
-import com.joshschriever.livenotes.midi.MidiAdapter;
+import com.joshschriever.livenotes.midi.MidiDispatcher;
+import com.joshschriever.livenotes.midi.MidiMessageAdapter;
+import com.joshschriever.livenotes.midi.MidiPlayer;
 import com.joshschriever.livenotes.midi.MidiReceiver;
 import com.joshschriever.livenotes.musicxml.MidiToXMLRenderer;
 
@@ -122,7 +124,9 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
     }
 
     private void initializeMidi() {
-        midiReceiver = new MidiReceiver(this, new MidiAdapter(midiToXMLRenderer));
+        midiReceiver =
+                new MidiReceiver(this, new MidiDispatcher(new MidiMessageAdapter(midiToXMLRenderer),
+                                                          new MidiPlayer()));
     }
 
     @Override
