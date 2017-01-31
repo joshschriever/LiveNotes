@@ -135,14 +135,14 @@ public class LiveNotesActivity extends Activity
     }
 
     private void onReadyToRecord() {
-        //TODO - set midiToXMLRenderer to ready
+        midiToXMLRenderer.setReady();
         setLongTapAction(LongTapAction.START, false);
-        showToast(R.string.start_playing_or_long_press);
+        showToast(R.string.start_playing_or_long_press, Toast.LENGTH_LONG);
     }
 
     @Override
     public void onStartRecording() {
-        setLongTapAction(LongTapAction.STOP, true);
+        setLongTapAction(LongTapAction.STOP, false);
     }
 
     @Override
@@ -157,13 +157,13 @@ public class LiveNotesActivity extends Activity
 
     @Override
     public void startRecording() {
-        Log.i("action", "startRecording");//TODO - start midiToXMLRenderer
+        midiToXMLRenderer.startRecording();
         setLongTapAction(LongTapAction.STOP, true);
     }
 
     @Override
     public void stopRecording() {
-        Log.i("action", "stopRecording");//TODO - stop midiToXMLRenderer
+        midiToXMLRenderer.stopRecording();
         setLongTapAction(LongTapAction.SAVE, true);
     }
 
@@ -182,7 +182,7 @@ public class LiveNotesActivity extends Activity
 
     @Override
     public void showDescription(int descriptionResId) {
-        showToast(descriptionResId);
+        showToast(descriptionResId, Toast.LENGTH_SHORT);
     }
 
     private void setLongTapAction(@NonNull LongTapAction action, boolean showDescription) {
@@ -196,8 +196,8 @@ public class LiveNotesActivity extends Activity
         longTapAction = Optional.empty();
     }
 
-    private void showToast(int messageResId) {
-        Toast.makeText(this, messageResId, Toast.LENGTH_SHORT).show();
+    private void showToast(int messageResId, int length) {
+        Toast.makeText(this, messageResId, length).show();
     }
 
     @Override
