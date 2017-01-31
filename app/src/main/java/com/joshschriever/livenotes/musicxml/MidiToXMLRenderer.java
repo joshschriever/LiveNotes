@@ -31,6 +31,8 @@ public class MidiToXMLRenderer implements MidiMessageRecipient {
     public interface Callbacks {
 
         void onXMLUpdated();
+
+        void onStartRecording();
     }
 
 }

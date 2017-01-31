@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">Live Notes</string>
+
+    <string name="start_playing_or_long_press">Start playing now or long press to start recording</string>
+    <string name="start_description">Long press to start recording</string>
+    <string name="stop_description">Long press to stop recording</string>
+    <string name="save_description">Long press to save score to a file</string>
+    <string name="reset_description">Long press to reset to a new score</string>
 </resources>

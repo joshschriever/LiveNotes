@@ -8,8 +8,10 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.WindowManager.LayoutParams;
 import android.widget.ScrollView;
+import android.widget.Toast;
 
 import com.joshschriever.livenotes.R;
+import com.joshschriever.livenotes.enumeration.LongTapAction;
 import com.joshschriever.livenotes.midi.MidiDispatcher;
 import com.joshschriever.livenotes.midi.MidiMessageAdapter;
 import com.joshschriever.livenotes.midi.MidiPlayer;
@@ -19,6 +21,7 @@ import com.joshschriever.livenotes.musicxml.MidiToXMLRenderer;
 import java.util.ArrayList;
 import java.util.List;
 
+import java8.util.Optional;
 import uk.co.dolphin_com.seescoreandroid.SeeScoreView;
 import uk.co.dolphin_com.sscore.Component;
 import uk.co.dolphin_com.sscore.LoadOptions;
@@ -30,7 +33,10 @@ import static java8.util.stream.Collectors.toList;
 import static java8.util.stream.StreamSupport.stream;
 import static uk.co.dolphin_com.seescoreandroid.LicenceKeyInstance.SeeScoreLibKey;
 
-public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Callbacks {
+public class LiveNotesActivity extends Activity
+        implements MidiToXMLRenderer.Callbacks,
+        SeeScoreView.TapNotification,
+        LongTapAction.ActionVisitor {
 
     private static final LoadOptions LOAD_OPTIONS = new LoadOptions(SeeScoreLibKey, true);
     private static final int PERMISSION_REQUEST_ALL_REQUIRED = 1;
@@ -48,10 +54,13 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
     private MidiToXMLRenderer midiToXMLRenderer;
     private MidiReceiver midiReceiver;
 
+    private Optional<LongTapAction> longTapAction = Optional.empty();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        getWindow().addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON | LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_live_notes);
 
         checkPermissions();
@@ -81,41 +90,16 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
     }
 
     private void initialize() {
-        initializeWindow();
         initializeScoreView();
         initializeScore();
         initializeMidi();
-    }
-
-    private void initializeWindow() {
-        getWindow().addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON | LayoutParams.FLAG_FULLSCREEN);
+        onReadyToRecord();
     }
 
     private void initializeScoreView() {
-        scoreView = new SeeScoreView(this,
-                                     getAssets(),
-                                     scale -> Log.i("ZoomNotification", "scale: " + scale),
-                                     new SeeScoreView.TapNotification() {
-                                         @Override
-                                         public void tap(int systemIndex,
-                                                         int partIndex,
-                                                         int barIndex,
-                                                         Component[] components) {
-                                             Log.i("TapNotification", "tap");
-                                         }
-
-                                         @Override
-                                         public void longTap(int systemIndex,
-                                                             int partIndex,
-                                                             int barIndex,
-                                                             Component[] components) {
-                                             Log.i("TapNotification", "longTap");
-                                         }
-                                     });
-
+        scoreView = new SeeScoreView(this, getAssets(), null, this);
         ScrollView scrollView = (ScrollView) findViewById(R.id.scroll_view);
         scrollView.addView(scoreView);
-        scrollView.setOnTouchListener((view, event) -> scoreView.onTouchEvent(event));
     }
 
     private void initializeScore() {
@@ -148,6 +132,72 @@ public class LiveNotesActivity extends Activity implements MidiToXMLRenderer.Cal
                            stream(new Boolean[score.numParts()])
                                    .map(__ -> Boolean.TRUE).collect(toList()),
                            1.0f);
+    }
+
+    private void onReadyToRecord() {
+        //TODO - set midiToXMLRenderer to ready
+        setLongTapAction(LongTapAction.START, false);
+        showToast(R.string.start_playing_or_long_press);
+    }
+
+    @Override
+    public void onStartRecording() {
+        setLongTapAction(LongTapAction.STOP, true);
+    }
+
+    @Override
+    public void tap(int systemIndex, int partIndex, int barIndex, Component[] components) {
+        longTapAction.ifPresent(action -> action.showDescription(this));
+    }
+
+    @Override
+    public void longTap(int systemIndex, int partIndex, int barIndex, Component[] components) {
+        longTapAction.ifPresent(action -> action.takeAction(this));
+    }
+
+    @Override
+    public void startRecording() {
+        Log.i("action", "startRecording");//TODO - start midiToXMLRenderer
+        setLongTapAction(LongTapAction.STOP, true);
+    }
+
+    @Override
+    public void stopRecording() {
+        Log.i("action", "stopRecording");//TODO - stop midiToXMLRenderer
+        setLongTapAction(LongTapAction.SAVE, true);
+    }
+
+    @Override
+    public void saveScore() {
+        clearLongTapAction();
+        Log.i("action", "saveScore");//TODO - open save dialog
+        setLongTapAction(LongTapAction.RESET, true);//TODO - this will be after save dialog closed
+    }
+
+    @Override
+    public void resetScore() {
+        clearLongTapAction();
+        Log.i("action", "resetScore");//TODO - reset
+    }
+
+    @Override
+    public void showDescription(int descriptionResId) {
+        showToast(descriptionResId);
+    }
+
+    private void setLongTapAction(@NonNull LongTapAction action, boolean showDescription) {
+        longTapAction = Optional.of(action);
+        if (showDescription) {
+            action.showDescription(this);
+        }
+    }
+
+    private void clearLongTapAction() {
+        longTapAction = Optional.empty();
+    }
+
+    private void showToast(int messageResId) {
+        Toast.makeText(this, messageResId, Toast.LENGTH_SHORT).show();
     }
 
     @Override
