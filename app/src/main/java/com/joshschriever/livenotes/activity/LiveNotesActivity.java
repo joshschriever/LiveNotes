@@ -12,6 +12,7 @@ import android.widget.Toast;
 
 import com.joshschriever.livenotes.R;
 import com.joshschriever.livenotes.enumeration.LongTapAction;
+import com.joshschriever.livenotes.fragment.SaveDialogFragment;
 import com.joshschriever.livenotes.midi.MidiDispatcher;
 import com.joshschriever.livenotes.midi.MidiMessageAdapter;
 import com.joshschriever.livenotes.midi.MidiPlayer;
@@ -36,9 +37,11 @@ import static uk.co.dolphin_com.seescoreandroid.LicenceKeyInstance.SeeScoreLibKe
 public class LiveNotesActivity extends Activity
         implements MidiToXMLRenderer.Callbacks,
         SeeScoreView.TapNotification,
-        LongTapAction.ActionVisitor {
+        LongTapAction.ActionVisitor,
+        SaveDialogFragment.Callbacks {
 
     private static final LoadOptions LOAD_OPTIONS = new LoadOptions(SeeScoreLibKey, true);
+    private static final String TAG_SAVE_DIALOG = "tagSaveDialog";
     private static final int PERMISSION_REQUEST_ALL_REQUIRED = 1;
     private static final List<String> REQUIRED_PERMISSIONS = new ArrayList<>();
 
@@ -170,8 +173,7 @@ public class LiveNotesActivity extends Activity
     @Override
     public void saveScore() {
         clearLongTapAction();
-        Log.i("action", "saveScore");//TODO - open save dialog
-        setLongTapAction(LongTapAction.RESET, true);//TODO - this will be after save dialog closed
+        new SaveDialogFragment(this).show(getFragmentManager(), TAG_SAVE_DIALOG);
     }
 
     @Override
@@ -198,6 +200,26 @@ public class LiveNotesActivity extends Activity
 
     private void showToast(int messageResId, int length) {
         Toast.makeText(this, messageResId, length).show();
+    }
+
+    @Override
+    public void onSave(String fileName) {
+        saveFile(fileName);
+        setLongTapAction(LongTapAction.RESET, false);
+        showToast(R.string.saved_reset, Toast.LENGTH_LONG);
+    }
+
+    @Override
+    public void onCancelSaving() {
+        setLongTapAction(LongTapAction.RESET, true);
+    }
+
+    private void saveFile(String fileName) {
+        //TODO - save file
+    }
+
+    @Override
+    public void onBackPressed() {
     }
 
     @Override
