@@ -57,6 +57,7 @@ public class LiveNotesActivity extends Activity
         REQUIRED_PERMISSIONS.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
     }
 
+    private ScrollView scrollView;
     private SeeScoreView scoreView;
 
     private MidiToXMLRenderer midiToXMLRenderer;
@@ -106,7 +107,7 @@ public class LiveNotesActivity extends Activity
 
     private void initializeScoreView() {
         scoreView = new SeeScoreView(this, getAssets(), null, this);
-        ScrollView scrollView = (ScrollView) findViewById(R.id.scroll_view);
+        scrollView = (ScrollView) findViewById(R.id.scroll_view);
         scrollView.addView(scoreView);
     }
 
@@ -184,7 +185,8 @@ public class LiveNotesActivity extends Activity
     @Override
     public void resetScore() {
         clearLongTapAction();
-        Log.i("action", "resetScore");//TODO - reset
+        resetFields();
+        initialize();
     }
 
     @Override
@@ -240,6 +242,19 @@ public class LiveNotesActivity extends Activity
         } catch (IOException e) {
             return false;
         }
+    }
+
+    private void resetFields() {
+        scrollView.removeView(scoreView);
+        scrollView = null;
+        scoreView = null;
+
+        midiToXMLRenderer = null;
+        midiReceiver.close();
+        midiReceiver = null;
+
+        longTapAction = Optional.empty();
+        System.gc();
     }
 
     @Override
