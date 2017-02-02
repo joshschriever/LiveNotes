@@ -3,6 +3,7 @@ package com.joshschriever.livenotes.activity;
 import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
+import android.media.MediaScannerConnection;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -227,10 +228,14 @@ public class LiveNotesActivity extends Activity
             File path = getExternalStoragePublicDirectory(getString(R.string.storage_dir));
             path.mkdir();
             File file = new File(path, fileName);
+
             FileOutputStream stream = new FileOutputStream(file);
             stream.write(midiToXMLRenderer.getXML().getBytes());
             stream.flush();
             stream.close();
+
+            MediaScannerConnection.scanFile(this, new String[] {file.toString()}, null, null);
+
             return true;
         } catch (IOException e) {
             return false;

@@ -23,7 +23,7 @@ public class SaveDialogFragment extends DialogFragment {
     @SuppressWarnings("ValidFragment")
     public SaveDialogFragment(Callbacks callbacks) {
         this.callbacks = callbacks;
-        filename = "Composition_" + new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss", Locale.US)
+        filename = "Composition_" + new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss", Locale.US)
                 .format(Calendar.getInstance(TimeZone.getDefault()).getTime()) + ".xml";
     }
 
