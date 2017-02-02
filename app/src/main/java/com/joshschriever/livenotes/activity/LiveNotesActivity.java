@@ -19,6 +19,9 @@ import com.joshschriever.livenotes.midi.MidiPlayer;
 import com.joshschriever.livenotes.midi.MidiReceiver;
 import com.joshschriever.livenotes.musicxml.MidiToXMLRenderer;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,6 +32,7 @@ import uk.co.dolphin_com.sscore.LoadOptions;
 import uk.co.dolphin_com.sscore.SScore;
 import uk.co.dolphin_com.sscore.ex.ScoreException;
 
+import static android.os.Environment.getExternalStoragePublicDirectory;
 import static java8.util.J8Arrays.stream;
 import static java8.util.stream.Collectors.toList;
 import static java8.util.stream.StreamSupport.stream;
@@ -204,9 +208,13 @@ public class LiveNotesActivity extends Activity
 
     @Override
     public void onSave(String fileName) {
-        saveFile(fileName);
-        setLongTapAction(LongTapAction.RESET, false);
-        showToast(R.string.saved_reset, Toast.LENGTH_LONG);
+        if (saveFile(fileName)) {
+            setLongTapAction(LongTapAction.RESET, false);
+            showToast(R.string.saved_reset, Toast.LENGTH_LONG);
+        } else {
+            setLongTapAction(LongTapAction.SAVE, false);
+            showToast(R.string.error_saving, Toast.LENGTH_LONG);
+        }
     }
 
     @Override
@@ -214,8 +222,19 @@ public class LiveNotesActivity extends Activity
         setLongTapAction(LongTapAction.RESET, true);
     }
 
-    private void saveFile(String fileName) {
-        //TODO - save file
+    private boolean saveFile(String fileName) {
+        try {
+            File path = getExternalStoragePublicDirectory(getString(R.string.storage_dir));
+            path.mkdir();
+            File file = new File(path, fileName);
+            FileOutputStream stream = new FileOutputStream(file);
+            stream.write(midiToXMLRenderer.getXML().getBytes());
+            stream.flush();
+            stream.close();
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     @Override

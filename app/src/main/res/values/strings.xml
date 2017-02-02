@@ -1,3 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE resources [<!ENTITY storagedir "Live Notes Scores">]>
+
 <resources>
     <string name="app_name">Live Notes</string>
 
@@ -7,8 +10,11 @@
     <string name="save_description">Long press to save score to a file</string>
     <string name="reset_description">Long press to reset to a new score</string>
     <string name="saved_reset">Saved. Long press to reset to a new score</string>
+
     <string name="save_musicxml_file">Save MusicXML File</string>
-    <string name="save_score_as">Save this score as \"/TODO/%1$s\"?</string>
+    <string name="storage_dir">&storagedir;</string>
+    <string name="save_score_as">Save this score as \"/&storagedir;/%1$s\"?</string>
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
+    <string name="error_saving">Error saving file</string>
 </resources>
