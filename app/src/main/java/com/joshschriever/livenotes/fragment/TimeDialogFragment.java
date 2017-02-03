@@ -4,12 +4,14 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.os.Bundle;
+import android.widget.NumberPicker;
 
 import com.joshschriever.livenotes.R;
 
 public class TimeDialogFragment extends DialogFragment {
 
     private Callbacks callbacks;
+    private NumberPicker tempo;
 
     public TimeDialogFragment() {
     }
@@ -23,7 +25,7 @@ public class TimeDialogFragment extends DialogFragment {
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         Dialog dialog = new AlertDialog.Builder(getContext())
                 .setTitle(R.string.time_dialog_title)
-                .setMessage("hello!")//TODO - setView(layoutResId) instead
+                .setView(R.layout.dialog_time)
                 .setPositiveButton(R.string.ok, (d, w) -> dismiss(true))
                 .create();
 
@@ -32,9 +34,25 @@ public class TimeDialogFragment extends DialogFragment {
         return dialog;
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        initializeViews(getDialog());
+    }
+
+    private void initializeViews(Dialog dialog) {
+        tempo = (NumberPicker) dialog.findViewById(R.id.tempo_picker);
+        tempo.setMinValue(getResources().getInteger(R.integer.min_tempo));
+        tempo.setMaxValue(getResources().getInteger(R.integer.max_tempo));
+        tempo.setValue(getResources().getInteger(R.integer.default_tempo));
+        tempo.setWrapSelectorWheel(false);
+
+        //TODO
+    }
+
     private void dismiss(boolean callback) {
         if (callback) {
-            callbacks.onTimeSet(6, 8, 101);
+            callbacks.onTimeSet(6, 8, tempo.getValue());//TODO
         }
         dismiss();
     }

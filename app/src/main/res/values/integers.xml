@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="min_tempo">30</integer>
+    <integer name="max_tempo">300</integer>
+    <integer name="default_tempo">120</integer>
+</resources>

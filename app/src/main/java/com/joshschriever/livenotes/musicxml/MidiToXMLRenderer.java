@@ -1,5 +1,7 @@
 package com.joshschriever.livenotes.musicxml;
 
+import android.util.Log;
+
 import org.jfugue.MidiMessageRecipient;
 import org.jfugue.MidiParser;
 
@@ -16,7 +18,7 @@ public class MidiToXMLRenderer implements MidiMessageRecipient {
 
     public MidiToXMLRenderer(Callbacks callbacks, int beats, int beatValue, int tempo) {
         this.callbacks = callbacks;
-        renderer = new MusicXmlRenderer(tempo);//TODO
+        renderer = new MusicXmlRenderer(tempo);Log.d("MidiToXML", "beats: " + beats + ", beatValue: " + beatValue);//TODO
         parser = new MidiParser();
         parser.addParserListener(renderer);
     }
