@@ -30,16 +30,18 @@ import nu.xom.Elements;
 public class MusicXmlRenderer implements ParserListener {
 
     private static final int DEFAULT_TEMPO = 120;
-    private static final int DIVISIONS_PER_QUARTER = 24;
+    private static final int DIVISIONS_PER_BEAT = 24;
 
     private Document document;
     private Element root = new Element("score-partwise");
     private Element elCurMeasure;
     private Element elCurPart;
 
+    private int beatsPerMeasure;
+    private int beatType;
     private int tempo;
 
-    public MusicXmlRenderer(int tempo) {
+    public MusicXmlRenderer(int tempo) {//TODO
         Element elID = new Element("identification");
         Element elCreator = new Element("creator");
         elCreator.addAttribute(new Attribute("type", "software"));
@@ -98,7 +100,7 @@ public class MusicXmlRenderer implements ParserListener {
             Element elLine;
             if (bAddDefaults) {
                 elClef = new Element("divisions");
-                elClef.appendChild(Integer.toString(DIVISIONS_PER_QUARTER));
+                elClef.appendChild(Integer.toString(DIVISIONS_PER_BEAT));
                 elAttributes.appendChild(elClef);
 
                 Element elKey = new Element("key");
@@ -224,7 +226,7 @@ public class MusicXmlRenderer implements ParserListener {
         Element elDirectionType = new Element("direction-type");
         Element elMetronome = new Element("metronome");
         Element elBeatUnit = new Element("beat-unit");
-        elBeatUnit.appendChild("quarter");
+        elBeatUnit.appendChild("quarter");//TODO - beat type
         Element elPerMinute = new Element("per-minute");
         elPerMinute.appendChild(Integer.toString(tempo.getTempo()));
         elMetronome.appendChild(elBeatUnit);
@@ -370,7 +372,7 @@ public class MusicXmlRenderer implements ParserListener {
 
         Element elDuration = new Element("duration");
         double decimalDuration = note.getDecimalDuration() * tempo / DEFAULT_TEMPO;
-        int iXMLDuration = (int) (decimalDuration * DIVISIONS_PER_QUARTER);
+        int iXMLDuration = (int) (decimalDuration * DIVISIONS_PER_BEAT);
         elDuration.appendChild(Integer.toString(iXMLDuration));
         elNote.appendChild(elDuration);
 
@@ -390,35 +392,35 @@ public class MusicXmlRenderer implements ParserListener {
             elNote.appendChild(elTie);
             bTied = true;
         }
-
+        //TODO
         String sType;
         boolean bDotted = false;
-        if (iXMLDuration <= ((DIVISIONS_PER_QUARTER / 4)
-                + (DIVISIONS_PER_QUARTER * 3 / 8)) / 2) {
+        if (iXMLDuration <= ((DIVISIONS_PER_BEAT / 4)
+                + (DIVISIONS_PER_BEAT * 3 / 8)) / 2) {
             sType = "16th";
-        } else if (iXMLDuration <= ((DIVISIONS_PER_QUARTER * 3 / 8)
-                + (DIVISIONS_PER_QUARTER / 2)) / 2) {
+        } else if (iXMLDuration <= ((DIVISIONS_PER_BEAT * 3 / 8)
+                + (DIVISIONS_PER_BEAT / 2)) / 2) {
             sType = "16th";
             bDotted = true;
-        } else if (iXMLDuration <= ((DIVISIONS_PER_QUARTER / 2)
-                + (DIVISIONS_PER_QUARTER * 3 / 4)) / 2) {
+        } else if (iXMLDuration <= ((DIVISIONS_PER_BEAT / 2)
+                + (DIVISIONS_PER_BEAT * 3 / 4)) / 2) {
             sType = "eighth";
-        } else if (iXMLDuration <= ((DIVISIONS_PER_QUARTER * 3 / 4)
-                + (DIVISIONS_PER_QUARTER)) / 2) {
+        } else if (iXMLDuration <= ((DIVISIONS_PER_BEAT * 3 / 4)
+                + (DIVISIONS_PER_BEAT)) / 2) {
             sType = "eighth";
             bDotted = true;
-        } else if (iXMLDuration <= ((DIVISIONS_PER_QUARTER)
-                + (DIVISIONS_PER_QUARTER * 3 / 2)) / 2) {
+        } else if (iXMLDuration <= ((DIVISIONS_PER_BEAT)
+                + (DIVISIONS_PER_BEAT * 3 / 2)) / 2) {
             sType = "quarter";
-        } else if (iXMLDuration <= ((DIVISIONS_PER_QUARTER * 3 / 2)
-                + (DIVISIONS_PER_QUARTER * 2)) / 2) {
+        } else if (iXMLDuration <= ((DIVISIONS_PER_BEAT * 3 / 2)
+                + (DIVISIONS_PER_BEAT * 2)) / 2) {
             sType = "quarter";
             bDotted = true;
-        } else if (iXMLDuration <= ((DIVISIONS_PER_QUARTER * 2)
-                + (DIVISIONS_PER_QUARTER * 3)) / 2) {
+        } else if (iXMLDuration <= ((DIVISIONS_PER_BEAT * 2)
+                + (DIVISIONS_PER_BEAT * 3)) / 2) {
             sType = "half";
-        } else if (iXMLDuration <= ((DIVISIONS_PER_QUARTER * 3)
-                + (DIVISIONS_PER_QUARTER * 4)) / 2) {
+        } else if (iXMLDuration <= ((DIVISIONS_PER_BEAT * 3)
+                + (DIVISIONS_PER_BEAT * 4)) / 2) {
             sType = "half";
             bDotted = true;
         } else {

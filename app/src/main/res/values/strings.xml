@@ -4,6 +4,10 @@
 <resources>
     <string name="app_name">Live Notes</string>
 
+    <!--TODO - more strings for time dialog-->
+    <string name="time_dialog_title">Set Time Signature and Tempo</string>
+    <string name="ok">OK</string>
+
     <string name="start_playing_or_long_press">Start playing now or long press to start recording</string>
     <string name="start_description">Long press to start recording</string>
     <string name="stop_description">Long press to stop recording</string>

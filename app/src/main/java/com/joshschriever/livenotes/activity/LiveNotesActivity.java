@@ -14,6 +14,7 @@ import android.widget.Toast;
 import com.joshschriever.livenotes.R;
 import com.joshschriever.livenotes.enumeration.LongTapAction;
 import com.joshschriever.livenotes.fragment.SaveDialogFragment;
+import com.joshschriever.livenotes.fragment.TimeDialogFragment;
 import com.joshschriever.livenotes.midi.MidiDispatcher;
 import com.joshschriever.livenotes.midi.MidiMessageAdapter;
 import com.joshschriever.livenotes.midi.MidiPlayer;
@@ -43,10 +44,12 @@ public class LiveNotesActivity extends Activity
         implements MidiToXMLRenderer.Callbacks,
         SeeScoreView.TapNotification,
         LongTapAction.ActionVisitor,
-        SaveDialogFragment.Callbacks {
+        SaveDialogFragment.Callbacks,
+        TimeDialogFragment.Callbacks {
 
     private static final LoadOptions LOAD_OPTIONS = new LoadOptions(SeeScoreLibKey, true);
     private static final String TAG_SAVE_DIALOG = "tagSaveDialog";
+    private static final String TAG_TIME_DIALOG = "tagTimeDialog";
     private static final int PERMISSION_REQUEST_ALL_REQUIRED = 1;
     private static final List<String> REQUIRED_PERMISSIONS = new ArrayList<>();
 
@@ -100,7 +103,16 @@ public class LiveNotesActivity extends Activity
 
     private void initialize() {
         initializeScoreView();
-        initializeScore();
+        new TimeDialogFragment(this).show(getFragmentManager(), TAG_TIME_DIALOG);
+    }
+
+    @Override
+    public void onTimeSet(int timeSigBeats, int timeSigBeatValue, int tempoBPM) {
+        continueInitialize(timeSigBeats, timeSigBeatValue, tempoBPM);
+    }
+
+    private void continueInitialize(int timeSigBeats, int timeSigBeatValue, int tempoBPM) {
+        initializeScore(timeSigBeats, timeSigBeatValue, tempoBPM);
         initializeMidi();
         onReadyToRecord();
     }
@@ -111,8 +123,8 @@ public class LiveNotesActivity extends Activity
         scrollView.addView(scoreView);
     }
 
-    private void initializeScore() {
-        midiToXMLRenderer = new MidiToXMLRenderer(this, 100);
+    private void initializeScore(int timeSigBeats, int timeSigBeatValue, int tempoBPM) {
+        midiToXMLRenderer = new MidiToXMLRenderer(this, timeSigBeats, timeSigBeatValue, tempoBPM);
         onXMLUpdated();
     }
 

@@ -14,9 +14,9 @@ public class MidiToXMLRenderer implements MidiMessageRecipient {
     private boolean ready = false;
     private boolean recording = false;
 
-    public MidiToXMLRenderer(Callbacks callbacks, int tempo) {
+    public MidiToXMLRenderer(Callbacks callbacks, int beats, int beatValue, int tempo) {
         this.callbacks = callbacks;
-        renderer = new MusicXmlRenderer(tempo);
+        renderer = new MusicXmlRenderer(tempo);//TODO
         parser = new MidiParser();
         parser.addParserListener(renderer);
     }
