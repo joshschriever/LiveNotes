@@ -1,14 +1,114 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="horizontal"
     android:padding="25dp">
 
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:layout_alignParentRight="true"
+        android:layout_marginRight="25dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:gravity="center_horizontal"
+            android:text="@string/time_signature"
+            android:textColor="@android:color/black"
+            android:textSize="15sp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="15dp"
+            android:gravity="center_horizontal"
+            android:orientation="horizontal">
+
+            <ToggleButton
+                android:id="@+id/simple"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textOff="@string/simple"
+                android:textOn="@string/simple"/>
+
+            <ToggleButton
+                android:id="@+id/compound"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textOff="@string/compound"
+                android:textOn="@string/compound"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/decrement_beats"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:text="@string/minus"/>
+
+            <TextView
+                android:id="@+id/beats"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:gravity="center_horizontal"
+                android:text="3"
+                android:textColor="@android:color/black"
+                android:textSize="25sp"
+                android:typeface="serif"/>
+
+            <Button
+                android:id="@+id/increment_beats"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:text="@string/plus"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/decrement_beat_value"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:text="@string/minus"/>
+
+            <TextView
+                android:id="@+id/beat_value"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:gravity="center_horizontal"
+                android:text="4"
+                android:textColor="@android:color/black"
+                android:textSize="25sp"
+                android:typeface="serif"/>
+
+            <Button
+                android:id="@+id/increment_beat_value"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:text="@string/plus"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
         android:layout_marginLeft="25dp"
         android:orientation="vertical">
 
@@ -31,6 +131,7 @@
                 android:layout_height="wrap_content"
                 android:descendantFocusability="blocksDescendants"/>
 
+            <!--TODO - use '%NOTE% = %%%' notation instead of 'bpm'-->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
@@ -41,4 +142,4 @@
 
     </LinearLayout>
 
-</RelativeLayout>
+</LinearLayout>

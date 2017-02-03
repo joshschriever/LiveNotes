@@ -5,6 +5,11 @@
     <string name="app_name">Live Notes</string>
 
     <string name="time_dialog_title">Set Time Signature and Tempo</string>
+    <string name="time_signature">Time Signature</string>
+    <string name="simple">Simple</string>
+    <string name="compound">Compound</string>
+    <string name="minus">-</string>
+    <string name="plus">+</string>
     <string name="tempo">Tempo</string>
     <string name="bpm">bpm</string>
     <string name="ok">OK</string>

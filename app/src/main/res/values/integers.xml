@@ -9,6 +9,7 @@
         <item>3</item>
         <item>4</item>
         <item>5</item>
+        <item>7</item>
     </integer-array>
     <integer-array name="simple_time_beat_value_options">
         <item>2</item>

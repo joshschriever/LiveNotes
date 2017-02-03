@@ -28,7 +28,7 @@ import nu.xom.Elements;
 
 // Forked from JFugue
 public class MusicXmlRenderer implements ParserListener {
-
+    //TODO - don't forget to handle simple vs compound meters correctly
     private static final int DEFAULT_TEMPO = 120;
     private static final int DIVISIONS_PER_BEAT = 24;
 
