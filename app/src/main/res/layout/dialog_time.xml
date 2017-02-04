@@ -15,7 +15,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
+            android:layout_marginBottom="8dp"
             android:gravity="center_horizontal"
             android:text="@string/time_signature"
             android:textColor="@android:color/black"
@@ -24,85 +24,87 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="15dp"
+            android:layout_marginBottom="8dp"
             android:gravity="center_horizontal"
             android:orientation="horizontal">
 
             <ToggleButton
                 android:id="@+id/simple"
-                android:layout_width="wrap_content"
+                android:layout_width="112dp"
                 android:layout_height="wrap_content"
                 android:textOff="@string/simple"
                 android:textOn="@string/simple"/>
 
             <ToggleButton
                 android:id="@+id/compound"
-                android:layout_width="wrap_content"
+                android:layout_width="112dp"
                 android:layout_height="wrap_content"
                 android:textOff="@string/compound"
                 android:textOn="@string/compound"/>
 
         </LinearLayout>
 
-        <LinearLayout
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
-            android:orientation="horizontal">
+            android:layout_height="300dp"
+            android:gravity="center_horizontal">
+
+            <TextView
+                android:id="@+id/beats"
+                android:layout_width="64dp"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:layout_centerInParent="true"
+                android:gravity="center_horizontal"
+                android:textColor="@android:color/black"
+                android:textSize="48sp"
+                android:typeface="serif"/>
+
+            <TextView
+                android:id="@+id/beat_value"
+                android:layout_width="64dp"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/beats"
+                android:layout_centerInParent="true"
+                android:layout_marginTop="-28dp"
+                android:gravity="center_horizontal"
+                android:textColor="@android:color/black"
+                android:textSize="48sp"
+                android:typeface="serif"/>
 
             <Button
                 android:id="@+id/decrement_beats"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
+                android:layout_alignTop="@id/beats"
+                android:layout_toLeftOf="@id/beats"
                 android:text="@string/minus"/>
-
-            <TextView
-                android:id="@+id/beats"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:gravity="center_horizontal"
-                android:text="3"
-                android:textColor="@android:color/black"
-                android:textSize="25sp"
-                android:typeface="serif"/>
 
             <Button
                 android:id="@+id/increment_beats"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
+                android:layout_alignTop="@id/beats"
+                android:layout_toRightOf="@id/beats"
                 android:text="@string/plus"/>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
-            android:orientation="horizontal">
 
             <Button
                 android:id="@+id/decrement_beat_value"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
+                android:layout_alignBottom="@id/beat_value"
+                android:layout_toLeftOf="@id/beat_value"
                 android:text="@string/minus"/>
-
-            <TextView
-                android:id="@+id/beat_value"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:gravity="center_horizontal"
-                android:text="4"
-                android:textColor="@android:color/black"
-                android:textSize="25sp"
-                android:typeface="serif"/>
 
             <Button
                 android:id="@+id/increment_beat_value"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
+                android:layout_alignBottom="@id/beat_value"
+                android:layout_toRightOf="@id/beat_value"
                 android:text="@string/plus"/>
 
-        </LinearLayout>
+        </RelativeLayout>
 
     </LinearLayout>
 

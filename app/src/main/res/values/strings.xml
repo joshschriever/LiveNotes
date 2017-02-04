@@ -10,8 +10,8 @@
     <string name="compound">Compound</string>
     <string name="minus">-</string>
     <string name="plus">+</string>
+    <string name="equals">=</string>
     <string name="tempo">Tempo</string>
-    <string name="bpm">bpm</string>
     <string name="ok">OK</string>
 
     <string name="start_playing_or_long_press">Start playing now or long press to start recording</string>

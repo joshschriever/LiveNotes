@@ -11,6 +11,10 @@ import com.joshschriever.livenotes.R;
 public class TimeDialogFragment extends DialogFragment {
 
     private Callbacks callbacks;
+
+    //TODO
+
+    //TODO
     private NumberPicker tempo;
 
     public TimeDialogFragment() {
@@ -41,13 +45,13 @@ public class TimeDialogFragment extends DialogFragment {
     }
 
     private void initializeViews(Dialog dialog) {
+        //TODO
+
         tempo = (NumberPicker) dialog.findViewById(R.id.tempo_picker);
         tempo.setMinValue(getResources().getInteger(R.integer.min_tempo));
         tempo.setMaxValue(getResources().getInteger(R.integer.max_tempo));
         tempo.setValue(getResources().getInteger(R.integer.default_tempo));
         tempo.setWrapSelectorWheel(false);
-
-        //TODO
     }
 
     private void dismiss(boolean callback) {
