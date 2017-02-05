@@ -9,7 +9,7 @@
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:layout_marginRight="25dp"
+        android:layout_marginRight="16dp"
         android:orientation="vertical">
 
         <TextView
@@ -111,7 +111,7 @@
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:layout_marginLeft="25dp"
+        android:layout_marginLeft="16dp"
         android:orientation="vertical">
 
         <TextView
@@ -127,18 +127,26 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:paddingBottom="20dp"
+                android:src="@mipmap/quarter_note"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="8dp"
+                android:layout_marginRight="8dp"
+                android:gravity="center_vertical"
+                android:text="@string/equals"/>
+
             <NumberPicker
                 android:id="@+id/tempo_picker"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:descendantFocusability="blocksDescendants"/>
-
-            <!--TODO - use '%NOTE% = %%%' notation instead of 'bpm'-->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:gravity="center_vertical"
-                android:text="@string/bpm"/>
 
         </LinearLayout>
 
