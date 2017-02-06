@@ -3,8 +3,13 @@ package com.joshschriever.livenotes.fragment;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
+import android.content.res.Resources;
 import android.os.Bundle;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.NumberPicker;
+import android.widget.TextView;
+import android.widget.ToggleButton;
 
 import com.joshschriever.livenotes.R;
 
@@ -12,9 +17,25 @@ public class TimeDialogFragment extends DialogFragment {
 
     private Callbacks callbacks;
 
-    //TODO
+    private int[] simpleBeatsOptions;
+    private int[] simpleBeatValueOptions;
+    private int[] compoundBeatsOptions;
+    private int[] compoundBeatValueOptions;
+    private int simpleDefaultBeatsIndex;
+    private int simpleDefaultBeatValueIndex;
+    private int compoundDefaultBeatsIndex;
+    private int compoundDefaultBeatValueIndex;
 
-    //TODO
+    private ToggleButton simple;
+    private ToggleButton compound;
+    private TextView beats;
+    private TextView beatValue;
+    private Button incrementBeats;
+    private Button decrementBeats;
+    private Button incrementBeatValue;
+    private Button decrementBeatValue;
+
+    private ImageView tempoNote;
     private NumberPicker tempo;
 
     public TimeDialogFragment() {
@@ -39,19 +60,88 @@ public class TimeDialogFragment extends DialogFragment {
     }
 
     @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        initializeFromResources(getResources());
+    }
+
+    @Override
     public void onStart() {
         super.onStart();
         initializeViews(getDialog());
     }
 
-    private void initializeViews(Dialog dialog) {
-        //TODO
+    private void initializeFromResources(Resources resources) {
+        simpleBeatsOptions = resources.getIntArray(R.array.simple_time_beats_options);
+        simpleBeatValueOptions = resources.getIntArray(R.array.simple_time_beat_value_options);
+        compoundBeatsOptions = resources.getIntArray(R.array.compound_time_beats_options);
+        compoundBeatValueOptions = resources.getIntArray(R.array.compound_time_beat_value_options);
 
-        tempo = (NumberPicker) dialog.findViewById(R.id.tempo_picker);
+        simpleDefaultBeatsIndex =
+                resources.getInteger(R.integer.simple_time_default_beats_index);
+        simpleDefaultBeatValueIndex =
+                resources.getInteger(R.integer.simple_time_default_beat_value_index);
+        compoundDefaultBeatsIndex =
+                resources.getInteger(R.integer.compound_time_default_beats_index);
+        compoundDefaultBeatValueIndex =
+                resources.getInteger(R.integer.compound_time_default_beat_value_index);
+    }
+
+    private void initializeViews(Dialog dialog) {
+        simple = (ToggleButton) dialog.findViewById(R.id.simple);
+        compound = (ToggleButton) dialog.findViewById(R.id.compound);
+        beats = (TextView) dialog.findViewById(R.id.beats);
+        beatValue = (TextView) dialog.findViewById(R.id.beat_value);
+        incrementBeats = (Button) dialog.findViewById(R.id.increment_beats);
+        decrementBeats = (Button) dialog.findViewById(R.id.decrement_beats);
+        incrementBeatValue = (Button) dialog.findViewById(R.id.increment_beat_value);
+        decrementBeatValue = (Button) dialog.findViewById(R.id.decrement_beat_value);
+
+        simple.setOnClickListener(__ -> onSimpleClicked());
+        compound.setOnClickListener(__ -> onCompoundClicked());
+        incrementBeats.setOnClickListener(__ -> onIncrementBeatsClicked());
+        decrementBeats.setOnClickListener(__ -> onDecrementBeatsClicked());
+        incrementBeatValue.setOnClickListener(__ -> onIncrementBeatValueClicked());
+        decrementBeatValue.setOnClickListener(__ -> onDecrementBeatValueClicked());
+
+        tempoNote = (ImageView) dialog.findViewById(R.id.tempo_note);
+        tempo = (NumberPicker) dialog.findViewById(R.id.tempo);
         tempo.setMinValue(getResources().getInteger(R.integer.min_tempo));
         tempo.setMaxValue(getResources().getInteger(R.integer.max_tempo));
         tempo.setValue(getResources().getInteger(R.integer.default_tempo));
         tempo.setWrapSelectorWheel(false);
+
+        onSimpleClicked();
+    }
+
+    private void onSimpleClicked() {
+        if (!simple.isChecked()) {
+            compound.setChecked(false);
+            //TODO
+        }
+    }
+
+    private void onCompoundClicked() {
+        if (!compound.isChecked()) {
+            simple.setChecked(false);
+            //TODO
+        }
+    }
+
+    private void onIncrementBeatsClicked() {
+        //TODO
+    }
+
+    private void onDecrementBeatsClicked() {
+        //TODO
+    }
+
+    private void onIncrementBeatValueClicked() {
+        //TODO
+    }
+
+    private void onDecrementBeatValueClicked() {
+        //TODO
     }
 
     private void dismiss(boolean callback) {
