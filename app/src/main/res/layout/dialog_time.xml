@@ -28,19 +28,35 @@
             android:gravity="center_horizontal"
             android:orientation="horizontal">
 
-            <ToggleButton
-                android:id="@+id/simple"
-                android:layout_width="112dp"
-                android:layout_height="wrap_content"
-                android:textOff="@string/simple"
-                android:textOn="@string/simple"/>
+            <FrameLayout
+                android:id="@+id/simple_parent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
 
-            <ToggleButton
-                android:id="@+id/compound"
-                android:layout_width="112dp"
-                android:layout_height="wrap_content"
-                android:textOff="@string/compound"
-                android:textOn="@string/compound"/>
+                <ToggleButton
+                    android:id="@+id/simple"
+                    android:layout_width="112dp"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:textOff="@string/simple"
+                    android:textOn="@string/simple"/>
+
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/compound_parent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+                <ToggleButton
+                    android:id="@+id/compound"
+                    android:layout_width="112dp"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:textOff="@string/compound"
+                    android:textOn="@string/compound"/>
+
+            </FrameLayout>
 
         </LinearLayout>
 

@@ -5,6 +5,7 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.util.SparseIntArray;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.NumberPicker;
@@ -14,6 +15,16 @@ import android.widget.ToggleButton;
 import com.joshschriever.livenotes.R;
 
 public class TimeDialogFragment extends DialogFragment {
+
+    private static final SparseIntArray NOTE_DRAWABLES = new SparseIntArray(5);
+
+    static {
+        NOTE_DRAWABLES.put(2, R.mipmap.half_note);
+        NOTE_DRAWABLES.put(3, R.mipmap.dotted_half_note);
+        NOTE_DRAWABLES.put(4, R.mipmap.quarter_note);
+        NOTE_DRAWABLES.put(6, R.mipmap.dotted_quarter_note);
+        NOTE_DRAWABLES.put(8, R.mipmap.eighth_note);
+    }
 
     private Callbacks callbacks;
 
@@ -97,8 +108,9 @@ public class TimeDialogFragment extends DialogFragment {
         incrementBeatValue = (Button) dialog.findViewById(R.id.increment_beat_value);
         decrementBeatValue = (Button) dialog.findViewById(R.id.decrement_beat_value);
 
-        simple.setOnClickListener(__ -> onSimpleClicked());
-        compound.setOnClickListener(__ -> onCompoundClicked());
+        dialog.findViewById(R.id.simple_parent).setOnClickListener(__ -> onSimpleClicked());
+        dialog.findViewById(R.id.compound_parent).setOnClickListener(__ -> onCompoundClicked());
+
         incrementBeats.setOnClickListener(__ -> onIncrementBeatsClicked());
         decrementBeats.setOnClickListener(__ -> onDecrementBeatsClicked());
         incrementBeatValue.setOnClickListener(__ -> onIncrementBeatValueClicked());
@@ -116,15 +128,19 @@ public class TimeDialogFragment extends DialogFragment {
 
     private void onSimpleClicked() {
         if (!simple.isChecked()) {
+            simple.setChecked(true);
             compound.setChecked(false);
-            //TODO
+            setBeats(true, simpleDefaultBeatsIndex);
+            setBeatValue(true, simpleDefaultBeatValueIndex);
         }
     }
 
     private void onCompoundClicked() {
         if (!compound.isChecked()) {
+            compound.setChecked(true);
             simple.setChecked(false);
-            //TODO
+            setBeats(false, compoundDefaultBeatsIndex);
+            setBeatValue(false, compoundDefaultBeatValueIndex);
         }
     }
 
@@ -144,9 +160,34 @@ public class TimeDialogFragment extends DialogFragment {
         //TODO
     }
 
+    private void setBeats(boolean simple, int index) {
+        if (simple) {
+            beats.setText(Integer.toString(simpleBeatsOptions[index]));
+        } else {
+            beats.setText(Integer.toString(compoundBeatsOptions[index]));
+        }
+    }
+
+    private void setBeatValue(boolean simple, int index) {
+        if (simple) {
+            beatValue.setText(Integer.toString(simpleBeatValueOptions[index]));
+            setTempoNote(simpleBeatValueOptions[index]);
+        } else {
+            beatValue.setText(Integer.toString(compoundBeatValueOptions[index]));
+            setTempoNote(compoundBeatValueOptions[index] * 3 / 4);
+        }
+    }
+
+    private void setTempoNote(int noteDrawableKey) {
+        tempoNote.setImageDrawable(getResources().getDrawable(NOTE_DRAWABLES.get(noteDrawableKey),
+                                                              null));
+    }
+
     private void dismiss(boolean callback) {
         if (callback) {
-            callbacks.onTimeSet(6, 8, tempo.getValue());//TODO
+            callbacks.onTimeSet(Integer.parseInt(beats.getText().toString()),
+                                Integer.parseInt(beatValue.getText().toString()),
+                                tempo.getValue());
         }
         dismiss();
     }
