@@ -49,9 +49,10 @@ public class MusicXmlRenderer implements ParserListener {
 
     private int beatsPerMeasure;
     private int beatType;
-    private int tempo;
+    private int markedTempo;
+    private int actualBeatsTempo;
 
-    public MusicXmlRenderer(int tempo, int beatsPerMeasure, int beatType) {
+    public MusicXmlRenderer(int beatsPerMeasure, int beatType, int tempo) {
         Element elID = new Element("identification");
         Element elCreator = new Element("creator");
         elCreator.addAttribute(new Attribute("type", "software"));
@@ -65,9 +66,11 @@ public class MusicXmlRenderer implements ParserListener {
                                          "http://www.musicxml.org/dtds/partwise.dtd"),
                              0);
 
-        this.tempo = tempo;
         this.beatsPerMeasure = beatsPerMeasure;
         this.beatType = beatType;
+        markedTempo = tempo;
+        actualBeatsTempo = markedTempo * (isTimeSignatureCompound() ? 3 : 1);
+
         doFirstMeasure(true);
     }
 
@@ -144,7 +147,7 @@ public class MusicXmlRenderer implements ParserListener {
 
                 elCurMeasure.appendChild(elAttributes);
 
-                doTempo(tempo);
+                doTempo(markedTempo);
             }
         }
     }
@@ -230,8 +233,6 @@ public class MusicXmlRenderer implements ParserListener {
     }
 
     private void doTempo(int tempo) {
-        this.tempo = tempo;
-
         Element elDirection = new Element("direction");
         elDirection.addAttribute(new Attribute("placement", "above"));
         Element elDirectionType = new Element("direction-type");
@@ -392,7 +393,7 @@ public class MusicXmlRenderer implements ParserListener {
         }
 
         Element elDuration = new Element("duration");
-        double decimalDuration = note.getDecimalDuration() * tempo / DEFAULT_TEMPO;
+        double decimalDuration = note.getDecimalDuration() * actualBeatsTempo / DEFAULT_TEMPO;
         int iXMLDuration = (int) (decimalDuration * DIVISIONS_PER_BEAT);
         elDuration.appendChild(Integer.toString(iXMLDuration));
         elNote.appendChild(elDuration);
@@ -413,47 +414,15 @@ public class MusicXmlRenderer implements ParserListener {
             elNote.appendChild(elTie);
             bTied = true;
         }
-        //TODO - actually implement handling the time signature correctly
-        String sType;
-        boolean bDotted = false;
-        if (iXMLDuration <= ((DIVISIONS_PER_BEAT / 4)
-                + (DIVISIONS_PER_BEAT * 3 / 8)) / 2) {
-            sType = "16th";
-        } else if (iXMLDuration <= ((DIVISIONS_PER_BEAT * 3 / 8)
-                + (DIVISIONS_PER_BEAT / 2)) / 2) {
-            sType = "16th";
-            bDotted = true;
-        } else if (iXMLDuration <= ((DIVISIONS_PER_BEAT / 2)
-                + (DIVISIONS_PER_BEAT * 3 / 4)) / 2) {
-            sType = "eighth";
-        } else if (iXMLDuration <= ((DIVISIONS_PER_BEAT * 3 / 4)
-                + (DIVISIONS_PER_BEAT)) / 2) {
-            sType = "eighth";
-            bDotted = true;
-        } else if (iXMLDuration <= ((DIVISIONS_PER_BEAT)
-                + (DIVISIONS_PER_BEAT * 3 / 2)) / 2) {
-            sType = "quarter";
-        } else if (iXMLDuration <= ((DIVISIONS_PER_BEAT * 3 / 2)
-                + (DIVISIONS_PER_BEAT * 2)) / 2) {
-            sType = "quarter";
-            bDotted = true;
-        } else if (iXMLDuration <= ((DIVISIONS_PER_BEAT * 2)
-                + (DIVISIONS_PER_BEAT * 3)) / 2) {
-            sType = "half";
-        } else if (iXMLDuration <= ((DIVISIONS_PER_BEAT * 3)
-                + (DIVISIONS_PER_BEAT * 4)) / 2) {
-            sType = "half";
-            bDotted = true;
-        } else {
-            sType = "whole";
-        }
 
+        NoteType noteType = noteTypeForDuration(iXMLDuration);
         Element elType = new Element("type");
-        elType.appendChild(sType);
+        elType.appendChild(noteType.typeString);
         elNote.appendChild(elType);
-        if (bDotted) {
+        if (noteType.dotted) {
             elNote.appendChild(new Element("dot"));
         }
+
         if (iAlter != 0) {
             Element elAccidental = new Element("accidental");
             elAccidental.appendChild(iAlter == 1 ? "sharp" : "flat");
@@ -501,6 +470,48 @@ public class MusicXmlRenderer implements ParserListener {
 
     private static String octaveForNoteValue(int value) {
         return Integer.toString(value / 12);
+    }
+
+    //TODO - actually implement handling the time signature correctly
+    private NoteType noteTypeForDuration(int duration) {
+        if (duration <= ((DIVISIONS_PER_BEAT / 4)
+                + (DIVISIONS_PER_BEAT * 3 / 8)) / 2) {
+            return new NoteType("16th", false);
+        } else if (duration <= ((DIVISIONS_PER_BEAT * 3 / 8)
+                + (DIVISIONS_PER_BEAT / 2)) / 2) {
+            return new NoteType("16th", true);
+        } else if (duration <= ((DIVISIONS_PER_BEAT / 2)
+                + (DIVISIONS_PER_BEAT * 3 / 4)) / 2) {
+            return new NoteType("eighth", false);
+        } else if (duration <= ((DIVISIONS_PER_BEAT * 3 / 4)
+                + (DIVISIONS_PER_BEAT)) / 2) {
+            return new NoteType("eighth", true);
+        } else if (duration <= ((DIVISIONS_PER_BEAT)
+                + (DIVISIONS_PER_BEAT * 3 / 2)) / 2) {
+            return new NoteType("quarter", false);
+        } else if (duration <= ((DIVISIONS_PER_BEAT * 3 / 2)
+                + (DIVISIONS_PER_BEAT * 2)) / 2) {
+            return new NoteType("quarter", true);
+        } else if (duration <= ((DIVISIONS_PER_BEAT * 2)
+                + (DIVISIONS_PER_BEAT * 3)) / 2) {
+            return new NoteType("half", false);
+        } else if (duration <= ((DIVISIONS_PER_BEAT * 3)
+                + (DIVISIONS_PER_BEAT * 4)) / 2) {
+            return new NoteType("half", true);
+        } else {
+            return new NoteType("whole", false);
+        }
+    }
+
+    private class NoteType {
+
+        private String typeString;
+        private boolean dotted;
+
+        private NoteType(String typeString, boolean dotted) {
+            this.typeString = typeString;
+            this.dotted = dotted;
+        }
     }
 
     public void sequentialNoteEvent(Note note) {

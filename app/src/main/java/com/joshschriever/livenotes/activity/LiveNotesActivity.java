@@ -237,6 +237,7 @@ public class LiveNotesActivity extends Activity
         setLongTapAction(LongTapAction.RESET, true);
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     private boolean saveFile(String fileName) {
         try {
             File path = getExternalStoragePublicDirectory(getString(R.string.storage_dir));
