@@ -156,49 +156,33 @@ public class TimeDialogFragment extends DialogFragment {
 
     private void onDecrementBeatsClicked() {
         if (simple.isChecked()) {
-            if (beats() > simpleBeatsOptions.get(0)) {
-                setBeats(true, simpleBeatsOptions.indexOf(beats()) - 1);
-            }
+            setBeats(true, simpleBeatsOptions.indexOf(beats()) - 1);
         } else {
-            if (beats() > compoundBeatsOptions.get(0)) {
-                setBeats(false, compoundBeatsOptions.indexOf(beats()) - 1);
-            }
+            setBeats(false, compoundBeatsOptions.indexOf(beats()) - 1);
         }
     }
 
     private void onIncrementBeatsClicked() {
         if (simple.isChecked()) {
-            if (beats() < simpleBeatsOptions.get(simpleBeatsOptions.size() - 1)) {
-                setBeats(true, simpleBeatsOptions.indexOf(beats()) + 1);
-            }
+            setBeats(true, simpleBeatsOptions.indexOf(beats()) + 1);
         } else {
-            if (beats() < compoundBeatsOptions.get(compoundBeatsOptions.size() - 1)) {
-                setBeats(false, compoundBeatsOptions.indexOf(beats()) + 1);
-            }
+            setBeats(false, compoundBeatsOptions.indexOf(beats()) + 1);
         }
     }
 
     private void onDecrementBeatValueClicked() {
         if (simple.isChecked()) {
-            if (beatValue() > simpleBeatValueOptions.get(0)) {
-                setBeatValue(true, simpleBeatValueOptions.indexOf(beatValue()) - 1);
-            }
+            setBeatValue(true, simpleBeatValueOptions.indexOf(beatValue()) - 1);
         } else {
-            if (beatValue() > compoundBeatValueOptions.get(0)) {
-                setBeatValue(false, compoundBeatValueOptions.indexOf(beatValue()) - 1);
-            }
+            setBeatValue(false, compoundBeatValueOptions.indexOf(beatValue()) - 1);
         }
     }
 
     private void onIncrementBeatValueClicked() {
         if (simple.isChecked()) {
-            if (beatValue() < simpleBeatValueOptions.get(simpleBeatValueOptions.size() - 1)) {
-                setBeatValue(true, simpleBeatValueOptions.indexOf(beatValue()) + 1);
-            }
+            setBeatValue(true, simpleBeatValueOptions.indexOf(beatValue()) + 1);
         } else {
-            if (beatValue() < compoundBeatValueOptions.get(compoundBeatValueOptions.size() - 1)) {
-                setBeatValue(false, compoundBeatValueOptions.indexOf(beatValue()) + 1);
-            }
+            setBeatValue(false, compoundBeatValueOptions.indexOf(beatValue()) + 1);
         }
     }
 
@@ -206,8 +190,14 @@ public class TimeDialogFragment extends DialogFragment {
     private void setBeats(boolean simple, int index) {
         if (simple) {
             beats.setText(Integer.toString(simpleBeatsOptions.get(index)));
+            decrementBeats.setEnabled(beats() > simpleBeatsOptions.get(0));
+            incrementBeats.setEnabled(
+                    beats() < simpleBeatsOptions.get(simpleBeatsOptions.size() - 1));
         } else {
             beats.setText(Integer.toString(compoundBeatsOptions.get(index)));
+            decrementBeats.setEnabled(beats() > compoundBeatsOptions.get(0));
+            incrementBeats.setEnabled(
+                    beats() < compoundBeatsOptions.get(compoundBeatsOptions.size() - 1));
         }
     }
 
@@ -215,9 +205,15 @@ public class TimeDialogFragment extends DialogFragment {
     private void setBeatValue(boolean simple, int index) {
         if (simple) {
             beatValue.setText(Integer.toString(simpleBeatValueOptions.get(index)));
+            decrementBeatValue.setEnabled(beatValue() > simpleBeatValueOptions.get(0));
+            incrementBeatValue.setEnabled(
+                    beatValue() < simpleBeatValueOptions.get(simpleBeatValueOptions.size() - 1));
             setTempoNote(simpleBeatValueOptions.get(index));
         } else {
             beatValue.setText(Integer.toString(compoundBeatValueOptions.get(index)));
+            decrementBeatValue.setEnabled(beatValue() > compoundBeatValueOptions.get(0));
+            incrementBeatValue.setEnabled(beatValue() < compoundBeatValueOptions.get(
+                    compoundBeatValueOptions.size() - 1));
             setTempoNote(compoundBeatValueOptions.get(index) * 3 / 4);
         }
     }
