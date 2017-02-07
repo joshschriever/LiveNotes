@@ -1,5 +1,7 @@
 package com.joshschriever.livenotes.musicxml;
 
+import android.util.SparseArray;
+
 import org.jfugue.ChannelPressure;
 import org.jfugue.Controller;
 import org.jfugue.Instrument;
@@ -28,9 +30,17 @@ import nu.xom.Elements;
 
 // Forked from JFugue
 public class MusicXmlRenderer implements ParserListener {
-    //TODO - don't forget to handle simple vs compound meters correctly
+
     private static final int DEFAULT_TEMPO = 120;
     private static final int DIVISIONS_PER_BEAT = 24;
+
+    private static final SparseArray<String> BEAT_UNIT_STRINGS = new SparseArray<>(5);
+
+    static {
+        BEAT_UNIT_STRINGS.put(2, "half");
+        BEAT_UNIT_STRINGS.put(4, "quarter");
+        BEAT_UNIT_STRINGS.put(8, "eighth");
+    }
 
     private Document document;
     private Element root = new Element("score-partwise");
@@ -41,7 +51,7 @@ public class MusicXmlRenderer implements ParserListener {
     private int beatType;
     private int tempo;
 
-    public MusicXmlRenderer(int tempo) {//TODO
+    public MusicXmlRenderer(int tempo, int beatsPerMeasure, int beatType) {
         Element elID = new Element("identification");
         Element elCreator = new Element("creator");
         elCreator.addAttribute(new Attribute("type", "software"));
@@ -56,6 +66,8 @@ public class MusicXmlRenderer implements ParserListener {
                              0);
 
         this.tempo = tempo;
+        this.beatsPerMeasure = beatsPerMeasure;
+        this.beatType = beatType;
         doFirstMeasure(true);
     }
 
@@ -114,10 +126,10 @@ public class MusicXmlRenderer implements ParserListener {
 
                 elSign = new Element("time");
                 elLine = new Element("beats");
-                elLine.appendChild(Integer.toString(4));
+                elLine.appendChild(Integer.toString(beatsPerMeasure));
                 elSign.appendChild(elLine);
                 Element elBeatType = new Element("beat-type");
-                elBeatType.appendChild(Integer.toString(4));
+                elBeatType.appendChild(Integer.toString(beatType));
                 elSign.appendChild(elBeatType);
                 elAttributes.appendChild(elSign);
 
@@ -132,7 +144,7 @@ public class MusicXmlRenderer implements ParserListener {
 
                 elCurMeasure.appendChild(elAttributes);
 
-                doTempo(new Tempo(tempo));
+                doTempo(tempo);
             }
         }
     }
@@ -215,29 +227,38 @@ public class MusicXmlRenderer implements ParserListener {
     }
 
     public void tempoEvent(Tempo tempo) {
-        doTempo(tempo);
     }
 
-    private void doTempo(Tempo tempo) {
-        this.tempo = tempo.getTempo();
+    private void doTempo(int tempo) {
+        this.tempo = tempo;
 
         Element elDirection = new Element("direction");
         elDirection.addAttribute(new Attribute("placement", "above"));
         Element elDirectionType = new Element("direction-type");
         Element elMetronome = new Element("metronome");
+
         Element elBeatUnit = new Element("beat-unit");
-        elBeatUnit.appendChild("quarter");//TODO - beat type
-        Element elPerMinute = new Element("per-minute");
-        elPerMinute.appendChild(Integer.toString(tempo.getTempo()));
+        elBeatUnit.appendChild(getBeatUnitString());
         elMetronome.appendChild(elBeatUnit);
-        elMetronome.appendChild(elPerMinute);
-        elDirectionType.appendChild(elMetronome);
-        elDirection.appendChild(elDirectionType);
-        if (elCurMeasure == null) {
-            doFirstMeasure(true);
+        if (isTimeSignatureCompound()) {
+            elMetronome.appendChild(new Element("beat-unit-dot"));
         }
 
+        Element elPerMinute = new Element("per-minute");
+        elPerMinute.appendChild(Integer.toString(tempo));
+        elMetronome.appendChild(elPerMinute);
+
+        elDirectionType.appendChild(elMetronome);
+        elDirection.appendChild(elDirectionType);
         elCurMeasure.appendChild(elDirection);
+    }
+
+    private String getBeatUnitString() {
+        return BEAT_UNIT_STRINGS.get(beatType / (isTimeSignatureCompound() ? 2 : 1));
+    }
+
+    private boolean isTimeSignatureCompound() {
+        return ((beatsPerMeasure % 3) == 0) && ((beatsPerMeasure / 3) > 1);
     }
 
     public void layerEvent(Layer layer) {
@@ -392,7 +413,7 @@ public class MusicXmlRenderer implements ParserListener {
             elNote.appendChild(elTie);
             bTied = true;
         }
-        //TODO
+        //TODO - actually implement handling the time signature correctly
         String sType;
         boolean bDotted = false;
         if (iXMLDuration <= ((DIVISIONS_PER_BEAT / 4)
