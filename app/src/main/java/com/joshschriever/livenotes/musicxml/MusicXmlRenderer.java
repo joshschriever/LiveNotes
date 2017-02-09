@@ -16,6 +16,7 @@ import org.jfugue.Tempo;
 import org.jfugue.Time;
 import org.jfugue.Voice;
 
+import java8.lang.Integers;
 import java8.util.Spliterator;
 import java8.util.Spliterators.AbstractSpliterator;
 import java8.util.function.Consumer;
@@ -32,7 +33,7 @@ import nu.xom.Elements;
 public class MusicXmlRenderer implements ParserListener {
 
     private static final int DEFAULT_TEMPO = 120;
-    private static final int DIVISIONS_PER_BEAT = 24;
+    private static final int DIVISIONS_PER_BEAT = 4;
 
     private static final SparseArray<String> BEAT_UNIT_STRINGS = new SparseArray<>(5);
 
@@ -392,9 +393,12 @@ public class MusicXmlRenderer implements ParserListener {
             elNote.appendChild(elPitch);
         }
 
-        Element elDuration = new Element("duration");
         double decimalDuration = note.getDecimalDuration() * actualBeatsTempo / DEFAULT_TEMPO;
-        int iXMLDuration = (int) (decimalDuration * DIVISIONS_PER_BEAT);
+        int iXMLDuration = decimalDuration == 0.0
+                           ? 0
+                           : Integers.max(1, (int) (decimalDuration * DIVISIONS_PER_BEAT));
+
+        Element elDuration = new Element("duration");
         elDuration.appendChild(Integer.toString(iXMLDuration));
         elNote.appendChild(elDuration);
 
@@ -415,11 +419,10 @@ public class MusicXmlRenderer implements ParserListener {
             bTied = true;
         }
 
-        NoteType noteType = noteTypeForDuration(iXMLDuration);
         Element elType = new Element("type");
-        elType.appendChild(noteType.typeString);
+        elType.appendChild(XMLDurationMap.noteStringForDuration(iXMLDuration, beatType));
         elNote.appendChild(elType);
-        if (noteType.dotted) {
+        if (XMLDurationMap.noteDottedForDuration(iXMLDuration, beatType)) {
             elNote.appendChild(new Element("dot"));
         }
 
@@ -470,48 +473,6 @@ public class MusicXmlRenderer implements ParserListener {
 
     private static String octaveForNoteValue(int value) {
         return Integer.toString(value / 12);
-    }
-
-    //TODO - actually implement handling the time signature correctly
-    private NoteType noteTypeForDuration(int duration) {
-        if (duration <= ((DIVISIONS_PER_BEAT / 4)
-                + (DIVISIONS_PER_BEAT * 3 / 8)) / 2) {
-            return new NoteType("16th", false);
-        } else if (duration <= ((DIVISIONS_PER_BEAT * 3 / 8)
-                + (DIVISIONS_PER_BEAT / 2)) / 2) {
-            return new NoteType("16th", true);
-        } else if (duration <= ((DIVISIONS_PER_BEAT / 2)
-                + (DIVISIONS_PER_BEAT * 3 / 4)) / 2) {
-            return new NoteType("eighth", false);
-        } else if (duration <= ((DIVISIONS_PER_BEAT * 3 / 4)
-                + (DIVISIONS_PER_BEAT)) / 2) {
-            return new NoteType("eighth", true);
-        } else if (duration <= ((DIVISIONS_PER_BEAT)
-                + (DIVISIONS_PER_BEAT * 3 / 2)) / 2) {
-            return new NoteType("quarter", false);
-        } else if (duration <= ((DIVISIONS_PER_BEAT * 3 / 2)
-                + (DIVISIONS_PER_BEAT * 2)) / 2) {
-            return new NoteType("quarter", true);
-        } else if (duration <= ((DIVISIONS_PER_BEAT * 2)
-                + (DIVISIONS_PER_BEAT * 3)) / 2) {
-            return new NoteType("half", false);
-        } else if (duration <= ((DIVISIONS_PER_BEAT * 3)
-                + (DIVISIONS_PER_BEAT * 4)) / 2) {
-            return new NoteType("half", true);
-        } else {
-            return new NoteType("whole", false);
-        }
-    }
-
-    private class NoteType {
-
-        private String typeString;
-        private boolean dotted;
-
-        private NoteType(String typeString, boolean dotted) {
-            this.typeString = typeString;
-            this.dotted = dotted;
-        }
     }
 
     public void sequentialNoteEvent(Note note) {
