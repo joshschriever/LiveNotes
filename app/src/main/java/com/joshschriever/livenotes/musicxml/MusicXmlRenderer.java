@@ -109,15 +109,13 @@ public class MusicXmlRenderer implements ParserListener {
 
         if (elCurMeasure == null) {
             elCurMeasure = new Element("measure");
-            elCurMeasure.addAttribute(new Attribute("number", Integer.toString(1)));
-            Element elAttributes = new Element("attributes");
-            Element elClef;
-            Element elSign;
-            Element elLine;
+            elCurMeasure.addAttribute(new Attribute("number", "1"));
+
             if (bAddDefaults) {
-                elClef = new Element("divisions");
-                elClef.appendChild(Integer.toString(DIVISIONS_PER_BEAT));
-                elAttributes.appendChild(elClef);
+                Element elAttributes = new Element("attributes");
+                Element elDivisions = new Element("divisions");
+                elDivisions.appendChild(Integer.toString(DIVISIONS_PER_BEAT));
+                elAttributes.appendChild(elDivisions);
 
                 Element elKey = new Element("key");
                 Element elFifths = new Element("fifths");
@@ -128,29 +126,38 @@ public class MusicXmlRenderer implements ParserListener {
                 elKey.appendChild(elMode);
                 elAttributes.appendChild(elKey);
 
-                elSign = new Element("time");
-                elLine = new Element("beats");
-                elLine.appendChild(Integer.toString(beatsPerMeasure));
-                elSign.appendChild(elLine);
+                Element elTime = new Element("time");
+                Element elBeats = new Element("beats");
+                elBeats.appendChild(Integer.toString(beatsPerMeasure));
+                elTime.appendChild(elBeats);
                 Element elBeatType = new Element("beat-type");
                 elBeatType.appendChild(Integer.toString(beatType));
-                elSign.appendChild(elBeatType);
-                elAttributes.appendChild(elSign);
+                elTime.appendChild(elBeatType);
+                elAttributes.appendChild(elTime);
 
-                elClef = new Element("clef");
-                elSign = new Element("sign");
-                elSign.appendChild("G");
-                elLine = new Element("line");
-                elLine.appendChild("2");
-                elClef.appendChild(elSign);
-                elClef.appendChild(elLine);
-                elAttributes.appendChild(elClef);
+                Element elStaves = new Element("staves");
+                elStaves.appendChild("2");
+                elAttributes.appendChild(elStaves);
+                elAttributes.appendChild(clefElementFrom(1, "G", 2));
+                elAttributes.appendChild(clefElementFrom(2, "F", 4));
 
                 elCurMeasure.appendChild(elAttributes);
 
                 doTempo(markedTempo);
             }
         }
+    }
+
+    private Element clefElementFrom(int number, String sign, int line) {
+        Element elClef = new Element("clef");
+        elClef.addAttribute(new Attribute("number", Integer.toString(number)));
+        Element elSign = new Element("sign");
+        elSign.appendChild(sign);
+        elClef.appendChild(elSign);
+        Element elLine = new Element("line");
+        elLine.appendChild(Integer.toString(line));
+        elClef.appendChild(elLine);
+        return elClef;
     }
 
     public void voiceEvent(Voice voice) {
@@ -431,6 +438,10 @@ public class MusicXmlRenderer implements ParserListener {
             elAccidental.appendChild(iAlter == 1 ? "sharp" : "flat");
             elNote.appendChild(elAccidental);
         }
+
+        Element elStaff = new Element("staff");
+        elStaff.appendChild(note.getValue() >= 48 ? "1" : "2");
+        elNote.appendChild(elStaff);
 
         if (bTied) {
             Element elNotations = new Element("notations");
