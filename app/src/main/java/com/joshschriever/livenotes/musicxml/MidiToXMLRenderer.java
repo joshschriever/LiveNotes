@@ -1,7 +1,6 @@
 package com.joshschriever.livenotes.musicxml;
 
 import org.jfugue.MidiMessageRecipient;
-import org.jfugue.MidiParser;
 
 import jp.kshoji.javax.sound.midi.MidiMessage;
 
@@ -28,7 +27,7 @@ public class MidiToXMLRenderer implements MidiMessageRecipient {
     public void startRecording() {
         if (ready && !recording) {
             recording = true;
-            //TODO - start task or whatever
+            //TODO - parser.start(startWithRest: true, timeStamp: System.currentTimeMillis());
         }
     }
 
@@ -36,7 +35,7 @@ public class MidiToXMLRenderer implements MidiMessageRecipient {
         if (recording) {
             ready = false;
             recording = false;
-            //TODO - stop task or whatever
+            //TODO - parser.stop(timeStamp: System.currentTimeMillis());
         }
     }
 
@@ -45,6 +44,7 @@ public class MidiToXMLRenderer implements MidiMessageRecipient {
         if (ready) {
             if (!recording) {
                 recording = true;
+                //TODO - parser.start(startWithRest: false, timeStamp: System.currentTimeMillis());
                 callbacks.onStartRecording();
             }
 
