@@ -2,18 +2,9 @@ package com.joshschriever.livenotes.musicxml;
 
 import android.util.SparseArray;
 
-import org.jfugue.ChannelPressure;
-import org.jfugue.Controller;
-import org.jfugue.Instrument;
-import org.jfugue.KeySignature;
-import org.jfugue.Layer;
 import org.jfugue.Measure;
 import org.jfugue.Note;
-import org.jfugue.ParserListener;
-import org.jfugue.PitchBend;
-import org.jfugue.PolyphonicPressure;
-import org.jfugue.Tempo;
-import org.jfugue.Time;
+import org.jfugue.ParserListenerAdapter;
 import org.jfugue.Voice;
 
 import java8.lang.Integers;
@@ -30,9 +21,9 @@ import nu.xom.Element;
 import nu.xom.Elements;
 
 // Forked from JFugue
-public class MusicXmlRenderer implements ParserListener {
+public class MusicXmlRenderer extends ParserListenerAdapter {
 
-    private static final int DEFAULT_TEMPO = 120;
+    private static final int ONE_MINUTE = 60_000;
     private static final int DIVISIONS_PER_BEAT = 4;
 
     private static final SparseArray<String> BEAT_UNIT_STRINGS = new SparseArray<>(5);
@@ -160,35 +151,6 @@ public class MusicXmlRenderer implements ParserListener {
         return elClef;
     }
 
-    public void voiceEvent(Voice voice) {
-        String sReqVoice = voice.getMusicString();
-        String sCurPartID =
-                elCurPart == null ? null : elCurPart.getAttribute("id").getValue();
-        if (sCurPartID == null || sReqVoice.compareTo(sCurPartID) != 0) {
-            boolean bNewVoiceExists = false;
-            Elements elParts = root.getChildElements("part");
-            Element elExistingNewPart = null;
-
-            for (int x = 0; x < elParts.size(); ++x) {
-                Element elP = elParts.get(x);
-                String sPID = elP.getAttribute("id").getValue();
-                if (sPID.compareTo(sReqVoice) == 0) {
-                    bNewVoiceExists = true;
-                    elExistingNewPart = elP;
-                }
-            }
-
-            finishCurrentVoice();
-            if (bNewVoiceExists) {
-                elCurPart = elExistingNewPart;
-            } else {
-                newVoice(voice);
-            }
-
-            newMeasure();
-        }
-    }
-
     private void finishCurrentVoice() {
         String sCurPartID = elCurPart == null ? null : elCurPart.getAttribute("id").getValue();
         boolean bCurVoiceExists = false;
@@ -212,7 +174,6 @@ public class MusicXmlRenderer implements ParserListener {
                 root.appendChild(elCurPart);
             }
         }
-
     }
 
     private void newVoice(Voice voice) {
@@ -227,17 +188,6 @@ public class MusicXmlRenderer implements ParserListener {
         elCurPart.addAttribute(atPart2);
         elCurMeasure = null;
         doFirstMeasure(true);
-    }
-
-    public void instrumentEvent(Instrument instrument) {
-        Element elInstrName = new Element("instrument-name");
-        elInstrName.appendChild(instrument.getInstrumentName());
-        Element elInstrument = new Element("score-instrument");
-        elInstrument.addAttribute(new Attribute("id", Byte.toString(instrument.getInstrument())));
-        elInstrument.appendChild(elInstrName);
-    }
-
-    public void tempoEvent(Tempo tempo) {
     }
 
     private void doTempo(int tempo) {
@@ -270,41 +220,6 @@ public class MusicXmlRenderer implements ParserListener {
         return ((beatsPerMeasure % 3) == 0) && ((beatsPerMeasure / 3) > 1);
     }
 
-    public void layerEvent(Layer layer) {
-    }
-
-    public void timeEvent(Time time) {
-    }
-
-    public void keySignatureEvent(KeySignature keySig) {
-        doKeySig(keySig);
-    }
-
-    private void doKeySig(KeySignature keySig) {
-        Element elKey = new Element("key");
-        Element elFifths = new Element("fifths");
-        elFifths.appendChild(Byte.toString(keySig.getKeySig()));
-        elKey.appendChild(elFifths);
-        Element elMode = new Element("mode");
-        elMode.appendChild(keySig.getScale() == 1 ? "minor" : "major");
-        elKey.appendChild(elMode);
-        if (elCurMeasure == null) {
-            doFirstMeasure(true);
-        }
-
-        Element elAttributes = elCurMeasure.getFirstChildElement("attributes");
-        boolean bNewAttributes = elAttributes == null;
-        if (bNewAttributes) {
-            elAttributes = new Element("attributes");
-        }
-
-        elAttributes.appendChild(elKey);
-        if (bNewAttributes) {
-            elCurMeasure.appendChild(elAttributes);
-        }
-
-    }
-
     public void measureEvent(Measure measure) {
         if (elCurMeasure == null) {
             doFirstMeasure(false);
@@ -312,7 +227,6 @@ public class MusicXmlRenderer implements ParserListener {
             finishCurrentMeasure();
             newMeasure();
         }
-
     }
 
     private void finishCurrentMeasure() {
@@ -330,7 +244,6 @@ public class MusicXmlRenderer implements ParserListener {
                 }
             }
         }
-
     }
 
     private void newMeasure() {
@@ -354,23 +267,14 @@ public class MusicXmlRenderer implements ParserListener {
             elCurMeasure = new Element("measure");
             elCurMeasure.addAttribute(new Attribute("number", Integer.toString(nextNumber)));
         }
-
-    }
-
-    public void controllerEvent(Controller controller) {
-    }
-
-    public void channelPressureEvent(ChannelPressure channelPressure) {
-    }
-
-    public void polyphonicPressureEvent(PolyphonicPressure polyphonicPressure) {
-    }
-
-    public void pitchBendEvent(PitchBend pitchBend) {
     }
 
     public void noteEvent(Note note) {
         doNote(note, false);
+    }
+
+    public void parallelNoteEvent(Note note) {
+        doNote(note, true);
     }
 
     private void doNote(Note note, boolean bChord) {
@@ -400,10 +304,10 @@ public class MusicXmlRenderer implements ParserListener {
             elNote.appendChild(elPitch);
         }
 
-        double decimalDuration = note.getDecimalDuration() * actualBeatsTempo / DEFAULT_TEMPO;
-        int iXMLDuration = decimalDuration == 0.0
+        int iXMLDuration = note.getDuration() == 0L
                            ? 0
-                           : Integers.max(1, (int) (decimalDuration * DIVISIONS_PER_BEAT));
+                           : Integers.max(1, (int) (note.getDuration() * DIVISIONS_PER_BEAT
+                                   * actualBeatsTempo / ONE_MINUTE));
 
         Element elDuration = new Element("duration");
         elDuration.appendChild(Integer.toString(iXMLDuration));
@@ -484,13 +388,6 @@ public class MusicXmlRenderer implements ParserListener {
 
     private static String octaveForNoteValue(int value) {
         return Integer.toString(value / 12);
-    }
-
-    public void sequentialNoteEvent(Note note) {
-    }
-
-    public void parallelNoteEvent(Note note) {
-        doNote(note, true);
     }
 
     private static Predicate<Element> noteMatches(int value, int duration) {
