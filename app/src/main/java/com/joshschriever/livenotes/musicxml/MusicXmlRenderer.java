@@ -2,7 +2,6 @@ package com.joshschriever.livenotes.musicxml;
 
 import android.util.SparseArray;
 
-import org.jfugue.Measure;
 import org.jfugue.Note;
 import org.jfugue.ParserListenerAdapter;
 import org.jfugue.Voice;
@@ -220,15 +219,6 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
         return ((beatsPerMeasure % 3) == 0) && ((beatsPerMeasure / 3) > 1);
     }
 
-    public void measureEvent(Measure measure) {
-        if (elCurMeasure == null) {
-            doFirstMeasure(false);
-        } else {
-            finishCurrentMeasure();
-            newMeasure();
-        }
-    }
-
     private void finishCurrentMeasure() {
         if (elCurMeasure.getParent() == null) {
             elCurPart.appendChild(elCurMeasure);
@@ -247,25 +237,31 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
     }
 
     private void newMeasure() {
-        int nextNumber = 1;
-        boolean bNewMeasure = true;
-        Elements elMeasures = elCurPart.getChildElements("measure");
-        Element elLastMeasure;
-        if (elMeasures.size() > 0) {
-            elLastMeasure = elMeasures.get(elMeasures.size() - 1);
-            Attribute elNumber = elLastMeasure.getAttribute("number");
-            if (elLastMeasure.getChildElements("note").size() < 1) {
-                bNewMeasure = false;
-            } else {
-                nextNumber = Integer.parseInt(elNumber.getValue()) + 1;
-            }
+        if (elCurMeasure == null) {
+            doFirstMeasure(false);
         } else {
-            bNewMeasure = elCurMeasure.getChildElements("note").size() > 0;
-        }
+            finishCurrentMeasure();
 
-        if (bNewMeasure) {
-            elCurMeasure = new Element("measure");
-            elCurMeasure.addAttribute(new Attribute("number", Integer.toString(nextNumber)));
+            int nextNumber = 1;
+            boolean bNewMeasure = true;
+            Elements elMeasures = elCurPart.getChildElements("measure");
+            Element elLastMeasure;
+            if (elMeasures.size() > 0) {
+                elLastMeasure = elMeasures.get(elMeasures.size() - 1);
+                Attribute elNumber = elLastMeasure.getAttribute("number");
+                if (elLastMeasure.getChildElements("note").size() < 1) {
+                    bNewMeasure = false;
+                } else {
+                    nextNumber = Integer.parseInt(elNumber.getValue()) + 1;
+                }
+            } else {
+                bNewMeasure = elCurMeasure.getChildElements("note").size() > 0;
+            }
+
+            if (bNewMeasure) {
+                elCurMeasure = new Element("measure");
+                elCurMeasure.addAttribute(new Attribute("number", Integer.toString(nextNumber)));
+            }
         }
     }
 
@@ -306,8 +302,9 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
 
         int iXMLDuration = note.getDuration() == 0L
                            ? 0
-                           : Integers.max(1, (int) (note.getDuration() * DIVISIONS_PER_BEAT
-                                   * actualBeatsTempo / ONE_MINUTE));
+                           : Integers.max(note.isRest() ? 0 : 1,
+                                          (int) (note.getDuration() * DIVISIONS_PER_BEAT
+                                                  * actualBeatsTempo / ONE_MINUTE));
 
         Element elDuration = new Element("duration");
         elDuration.appendChild(Integer.toString(iXMLDuration));
@@ -366,7 +363,11 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
             elNote.appendChild(elNotations);
         }
 
-        if (iXMLDuration == 0) {
+        if (note.isRest()) {
+            if (iXMLDuration > 0) {
+                elCurMeasure.appendChild(elNote);
+            }
+        } else if (iXMLDuration == 0) {
             elCurMeasure.appendChild(elNote);
         } else {
             stream(root.getChildElements("part"))
@@ -375,7 +376,7 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
                     .filter(noteMatches(note.getValue(), 0)).findFirst()
                     .ifPresent(elOldNote -> elCurMeasure.replaceChild(elOldNote, elNote));
         }
-    }
+    } //TODO - handle measures
 
     private static String stepForNoteValue(int value) {
         return Note.NOTES[value % 12].substring(0, 1);
@@ -391,7 +392,8 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
     }
 
     private static Predicate<Element> noteMatches(int value, int duration) {
-        return elNote -> pitchMatches(elNote.getFirstChildElement("pitch"), value)
+        return elNote -> elNote.getFirstChildElement("rest") == null
+                && pitchMatches(elNote.getFirstChildElement("pitch"), value)
                 && elNote.getFirstChildElement("duration")
                          .getValue().equals(Integer.toString(duration));
     }

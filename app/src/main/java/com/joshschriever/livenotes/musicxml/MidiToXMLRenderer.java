@@ -16,7 +16,7 @@ public class MidiToXMLRenderer implements MidiMessageRecipient {
     public MidiToXMLRenderer(Callbacks callbacks, int beats, int beatValue, int tempo) {
         this.callbacks = callbacks;
         renderer = new MusicXmlRenderer(beats, beatValue, tempo);
-        parser = new MidiParser();//TODO
+        parser = new MidiParser();
         parser.addParserListener(renderer);
     }
 
@@ -26,8 +26,9 @@ public class MidiToXMLRenderer implements MidiMessageRecipient {
 
     public void startRecording() {
         if (ready && !recording) {
+            parser.startWithRests();
+            callbacks.onXMLUpdated();
             recording = true;
-            //TODO - parser.start(startWithRest: true, timeStamp: System.currentTimeMillis());
         }
     }
 
@@ -35,7 +36,8 @@ public class MidiToXMLRenderer implements MidiMessageRecipient {
         if (recording) {
             ready = false;
             recording = false;
-            //TODO - parser.stop(timeStamp: System.currentTimeMillis());
+            parser.stop();
+            callbacks.onXMLUpdated();
         }
     }
 
@@ -44,7 +46,6 @@ public class MidiToXMLRenderer implements MidiMessageRecipient {
         if (ready) {
             if (!recording) {
                 recording = true;
-                //TODO - parser.start(startWithRest: false, timeStamp: System.currentTimeMillis());
                 callbacks.onStartRecording();
             }
 
