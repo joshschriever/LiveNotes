@@ -37,6 +37,7 @@ public class MidiToXMLRenderer implements MidiMessageRecipient {
             ready = false;
             recording = false;
             parser.stop();
+            renderer.removeTrailingEmptyMeasures();
             callbacks.onXMLUpdated();
         }
     }

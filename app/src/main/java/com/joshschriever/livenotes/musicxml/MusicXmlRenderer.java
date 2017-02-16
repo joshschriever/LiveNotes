@@ -4,7 +4,6 @@ import android.util.SparseArray;
 
 import org.jfugue.Note;
 import org.jfugue.ParserListenerAdapter;
-import org.jfugue.Voice;
 
 import java8.lang.Integers;
 import java8.util.Optional;
@@ -26,7 +25,7 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
     private static final int ONE_MINUTE = 60_000;
     private static final int DIVISIONS_PER_BEAT = 4;
 
-    private static final SparseArray<String> BEAT_UNIT_STRINGS = new SparseArray<>(5);
+    private static final SparseArray<String> BEAT_UNIT_STRINGS = new SparseArray<>(3);
 
     static {
         BEAT_UNIT_STRINGS.put(2, "half");
@@ -35,9 +34,9 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
     }
 
     private Document document;
-    private Element root = new Element("score-partwise");
+    private Element elRoot;
+    private Element elPart;
     private Element elCurMeasure;
-    private Element elCurPart;
 
     private int beatsPerMeasure;
     private int beatType;
@@ -45,99 +44,110 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
     private int actualBeatsTempo;
 
     public MusicXmlRenderer(int beatsPerMeasure, int beatType, int tempo) {
-        Element elID = new Element("identification");
-        Element elCreator = new Element("creator");
-        elCreator.addAttribute(new Attribute("type", "software"));
-        elCreator.appendChild("JFugue MusicXMLRenderer");
-        elID.appendChild(elCreator);
-        root.appendChild(elID);
-        root.appendChild(new Element("part-list"));
-        document = new Document(root);
-        document.insertChild(new DocType("score-partwise",
-                                         "-//Recordare//DTD MusicXML 1.1 Partwise//EN",
-                                         "http://www.musicxml.org/dtds/partwise.dtd"),
-                             0);
-
         this.beatsPerMeasure = beatsPerMeasure;
         this.beatType = beatType;
         markedTempo = tempo;
         actualBeatsTempo = markedTempo * (isTimeSignatureCompound() ? 3 : 1);
 
-        doFirstMeasure(true);
+        elRoot = new Element("score-partwise");
+        Element elID = new Element("identification");
+        Element elCreator = new Element("creator");
+        elCreator.addAttribute(new Attribute("type", "software"));
+        elCreator.appendChild("Live Notes via JFugue");
+        elID.appendChild(elCreator);
+        elRoot.appendChild(elID);
+
+        document = new Document(elRoot);
+        document.insertChild(new DocType("score-partwise",
+                                         "-//Recordare//DTD MusicXML 1.1 Partwise//EN",
+                                         "http://www.musicxml.org/dtds/partwise.dtd"),
+                             0);
+
+        elRoot.appendChild(new Element("part-list"));
+        doFirstMeasure();
     }
 
     public String getMusicXMLString() {
-        return getInternalMusicXMLString().replaceAll("<duration>0</duration>",
-                                                      "<duration>1</duration>");
+        return document.toXML().replaceAll("<duration>0</duration>",
+                                           "<duration>1</duration>");
     }
 
-    private String getInternalMusicXMLString() {
-        return getMusicXMLDoc().toXML();
+    public void removeTrailingEmptyMeasures() {
+        streamInReverse(elPart.getChildElements("measure"))
+                .takeWhile(elMeasure -> elMeasure.getChildCount() == 0
+                        || stream(elMeasure.getChildElements("note"))
+                        .allMatch(elNote -> elNote.getFirstChildElement("rest") != null))
+                .forEach(elMeasure -> elPart.removeChild(elMeasure));
     }
 
-    private Document getMusicXMLDoc() {
-        finishCurrentVoice();
-        Elements elDocParts = root.getChildElements("part");
+    private void doFirstMeasure() {
+        if (elPart == null) {
+            Element elScorePart = new Element("score-part");
+            elScorePart.addAttribute(new Attribute("id", "V0"));
+            elScorePart.appendChild(new Element("part-name"));
+            elRoot.getFirstChildElement("part-list").appendChild(elScorePart);
 
-        for (int xomDoc = 0; xomDoc < elDocParts.size(); ++xomDoc) {
-            Element docType = elDocParts.get(xomDoc);
-            Elements elPartMeasures = docType.getChildElements("measure");
-
-            for (int xM = 0; xM < elPartMeasures.size(); ++xM) {
-                if (elPartMeasures.get(xM).getChildCount() < 1) {
-                    docType.removeChild(xM);
-                }
-            }
-            //TODO - remove any measures at the end whose only children are rests
-            //TODO --(make sure to remove only ending measures, not ones in the middle of the song)
-        }
-
-        return document;
-    }
-
-    private void doFirstMeasure(boolean bAddDefaults) {
-        if (elCurPart == null) {
-            newVoice(new Voice((byte) 0));
+            elPart = new Element("part");
+            elPart.addAttribute(new Attribute("id", "V0"));
+            elRoot.appendChild(elPart);
         }
 
         if (elCurMeasure == null) {
             elCurMeasure = new Element("measure");
             elCurMeasure.addAttribute(new Attribute("number", "1"));
 
-            if (bAddDefaults) {
-                Element elAttributes = new Element("attributes");
-                Element elDivisions = new Element("divisions");
-                elDivisions.appendChild(Integer.toString(DIVISIONS_PER_BEAT));
-                elAttributes.appendChild(elDivisions);
+            Element elAttributes = new Element("attributes");
+            Element elDivisions = new Element("divisions");
+            elDivisions.appendChild(Integer.toString(DIVISIONS_PER_BEAT));
+            elAttributes.appendChild(elDivisions);
 
-                Element elKey = new Element("key");
-                Element elFifths = new Element("fifths");
-                elFifths.appendChild("0");
-                elKey.appendChild(elFifths);
-                Element elMode = new Element("mode");
-                elMode.appendChild("major");
-                elKey.appendChild(elMode);
-                elAttributes.appendChild(elKey);
+            Element elKey = new Element("key");
+            Element elFifths = new Element("fifths");
+            elFifths.appendChild("0");
+            elKey.appendChild(elFifths);
+            Element elMode = new Element("mode");
+            elMode.appendChild("major");
+            elKey.appendChild(elMode);
+            elAttributes.appendChild(elKey);
 
-                Element elTime = new Element("time");
-                Element elBeats = new Element("beats");
-                elBeats.appendChild(Integer.toString(beatsPerMeasure));
-                elTime.appendChild(elBeats);
-                Element elBeatType = new Element("beat-type");
-                elBeatType.appendChild(Integer.toString(beatType));
-                elTime.appendChild(elBeatType);
-                elAttributes.appendChild(elTime);
+            Element elTime = new Element("time");
+            Element elBeats = new Element("beats");
+            elBeats.appendChild(Integer.toString(beatsPerMeasure));
+            elTime.appendChild(elBeats);
+            Element elBeatType = new Element("beat-type");
+            elBeatType.appendChild(Integer.toString(beatType));
+            elTime.appendChild(elBeatType);
+            elAttributes.appendChild(elTime);
 
-                Element elStaves = new Element("staves");
-                elStaves.appendChild("2");
-                elAttributes.appendChild(elStaves);
-                elAttributes.appendChild(clefElementFrom(1, "G", 2));
-                elAttributes.appendChild(clefElementFrom(2, "F", 4));
+            Element elStaves = new Element("staves");
+            elStaves.appendChild("2");
+            elAttributes.appendChild(elStaves);
+            elAttributes.appendChild(clefElementFrom(1, "G", 2));
+            elAttributes.appendChild(clefElementFrom(2, "F", 4));
 
-                elCurMeasure.appendChild(elAttributes);
+            elCurMeasure.appendChild(elAttributes);
 
-                doTempo(markedTempo);
+            Element elDirection = new Element("direction");
+            elDirection.addAttribute(new Attribute("placement", "above"));
+            Element elDirectionType = new Element("direction-type");
+            Element elMetronome = new Element("metronome");
+
+            Element elBeatUnit = new Element("beat-unit");
+            elBeatUnit.appendChild(getBeatUnitString());
+            elMetronome.appendChild(elBeatUnit);
+            if (isTimeSignatureCompound()) {
+                elMetronome.appendChild(new Element("beat-unit-dot"));
             }
+
+            Element elPerMinute = new Element("per-minute");
+            elPerMinute.appendChild(Integer.toString(markedTempo));
+            elMetronome.appendChild(elPerMinute);
+
+            elDirectionType.appendChild(elMetronome);
+            elDirection.appendChild(elDirectionType);
+            elCurMeasure.appendChild(elDirection);
+
+            elPart.appendChild(elCurMeasure);
         }
     }
 
@@ -153,67 +163,6 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
         return elClef;
     }
 
-    private void finishCurrentVoice() {
-        String sCurPartID = elCurPart == null ? null : elCurPart.getAttribute("id").getValue();
-        boolean bCurVoiceExists = false;
-        Elements elParts = root.getChildElements("part");
-        Element elExistingCurPart = null;
-
-        for (int x = 0; x < elParts.size(); ++x) {
-            Element elP = elParts.get(x);
-            String sPID = elP.getAttribute("id").getValue();
-            if (sPID.compareTo(sCurPartID) == 0) {
-                bCurVoiceExists = true;
-                elExistingCurPart = elP;
-            }
-        }
-
-        if (elCurPart != null) {
-            finishCurrentMeasure();
-            if (bCurVoiceExists) {
-                root.replaceChild(elExistingCurPart, elCurPart);
-            } else {
-                root.appendChild(elCurPart);
-            }
-        }
-    }
-
-    private void newVoice(Voice voice) {
-        Element elScorePart = new Element("score-part");
-        Attribute atPart = new Attribute("id", voice.getMusicString());
-        elScorePart.addAttribute(atPart);
-        elScorePart.appendChild(new Element("part-name"));
-        Element elPL = root.getFirstChildElement("part-list");
-        elPL.appendChild(elScorePart);
-        elCurPart = new Element("part");
-        Attribute atPart2 = new Attribute(atPart);
-        elCurPart.addAttribute(atPart2);
-        elCurMeasure = null;
-        doFirstMeasure(true);
-    }
-
-    private void doTempo(int tempo) {
-        Element elDirection = new Element("direction");
-        elDirection.addAttribute(new Attribute("placement", "above"));
-        Element elDirectionType = new Element("direction-type");
-        Element elMetronome = new Element("metronome");
-
-        Element elBeatUnit = new Element("beat-unit");
-        elBeatUnit.appendChild(getBeatUnitString());
-        elMetronome.appendChild(elBeatUnit);
-        if (isTimeSignatureCompound()) {
-            elMetronome.appendChild(new Element("beat-unit-dot"));
-        }
-
-        Element elPerMinute = new Element("per-minute");
-        elPerMinute.appendChild(Integer.toString(tempo));
-        elMetronome.appendChild(elPerMinute);
-
-        elDirectionType.appendChild(elMetronome);
-        elDirection.appendChild(elDirectionType);
-        elCurMeasure.appendChild(elDirection);
-    }
-
     private String getBeatUnitString() {
         return BEAT_UNIT_STRINGS.get(beatType / (isTimeSignatureCompound() ? 2 : 1));
     }
@@ -222,50 +171,19 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
         return ((beatsPerMeasure % 3) == 0) && ((beatsPerMeasure / 3) > 1);
     }
 
-    private void finishCurrentMeasure() {
-        if (elCurMeasure.getParent() == null) {
-            elCurPart.appendChild(elCurMeasure);
-        } else {
-            int sCurMNum = Integer.parseInt(elCurMeasure.getAttributeValue("number"));
-            Elements elMeasures = elCurPart.getChildElements("measure");
-
-            for (int x = 0; x < elMeasures.size(); ++x) {
-                Element elM = elMeasures.get(x);
-                int sMNum = Integer.parseInt(elM.getAttributeValue("number"));
-                if (sMNum == sCurMNum) {
-                    elCurPart.replaceChild(elM, elCurMeasure);
-                }
-            }
-        }
+    private int measureNumberOf(Element measure) {
+        return Integer.parseInt(measure.getAttributeValue("number"));
     }
 
     private void newMeasure() {
-        if (elCurMeasure == null) {
-            doFirstMeasure(false);
-        } else {
-            finishCurrentMeasure();
+        int nextNumber = Integer.parseInt(
+                stream(elPart.getChildElements("measure"))
+                        .max((m1, m2) -> measureNumberOf(m1) - measureNumberOf(m2))
+                        .get().getAttributeValue("number")) + 1;
 
-            int nextNumber = 1;
-            boolean bNewMeasure = true;
-            Elements elMeasures = elCurPart.getChildElements("measure");
-            Element elLastMeasure;
-            if (elMeasures.size() > 0) {
-                elLastMeasure = elMeasures.get(elMeasures.size() - 1);
-                Attribute elNumber = elLastMeasure.getAttribute("number");
-                if (elLastMeasure.getChildElements("note").size() < 1) {
-                    bNewMeasure = false;
-                } else {
-                    nextNumber = Integer.parseInt(elNumber.getValue()) + 1;
-                }
-            } else {
-                bNewMeasure = elCurMeasure.getChildElements("note").size() > 0;
-            }
-
-            if (bNewMeasure) {
-                elCurMeasure = new Element("measure");
-                elCurMeasure.addAttribute(new Attribute("number", Integer.toString(nextNumber)));
-            }
-        }
+        elCurMeasure = new Element("measure");
+        elCurMeasure.addAttribute(new Attribute("number", Integer.toString(nextNumber)));
+        elPart.appendChild(elCurMeasure);
     }
 
     public void noteEvent(Note note) {
@@ -367,22 +285,23 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
             elNote.appendChild(elNotations);
         }
 
-        //TODO - this does things in terms of elCurMeasure, which won't work with multiple measures
         if (note.isRest()) {
             if (iXMLDuration == 0) {
                 firstNoteThatMatches(restMatches(iStaff, 0))
-                        .ifPresentOrElse(elOldNote -> elCurMeasure.removeChild(elOldNote),
+                        .ifPresentOrElse(elOldNote -> elOldNote.getParent().removeChild(elOldNote),
                                          () -> elCurMeasure.appendChild(elNote));
             } else {
                 firstNoteThatMatches(restMatches(iStaff, 0))
-                        .ifPresent(elOldNote -> elCurMeasure.replaceChild(elOldNote, elNote));
+                        .ifPresent(elOldNote -> elOldNote.getParent()
+                                                         .replaceChild(elOldNote, elNote));
             }
         } else {
             if (iXMLDuration == 0) {
                 elCurMeasure.appendChild(elNote);
             } else {
                 firstNoteThatMatches(noteMatches(note.getValue(), 0))
-                        .ifPresent(elOldNote -> elCurMeasure.replaceChild(elOldNote, elNote));
+                        .ifPresent(elOldNote -> elOldNote.getParent()
+                                                         .replaceChild(elOldNote, elNote));
             }
         }
     } //TODO - handle measures
@@ -429,9 +348,8 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
     }
 
     private Optional<Element> firstNoteThatMatches(Predicate<Element> predicate) {
-        return stream(root.getChildElements("part"))
-                .flatMap(part -> stream(part.getChildElements("measure"))
-                        .flatMap(measure -> stream(measure.getChildElements("note"))))
+        return stream(elPart.getChildElements("measure"))
+                .flatMap(measure -> stream(measure.getChildElements("note")))
                 .filter(predicate).findFirst();
     }
 
@@ -439,14 +357,19 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
         return StreamSupport.stream(new ElementsSpliterator(elements), false);
     }
 
+    private static Stream<Element> streamInReverse(Elements elements) {
+        return StreamSupport.stream(new ReverseElementsSpliterator(elements), false);
+    }
+
     private static class ElementsSpliterator extends AbstractSpliterator<Element> {
 
-        private Elements elements;
-        private int current = 0;
+        Elements elements;
+        int current;
 
-        private ElementsSpliterator(Elements elements) {
+        ElementsSpliterator(Elements elements) {
             super(elements.size(), Spliterator.ORDERED | Spliterator.SIZED | Spliterator.IMMUTABLE);
             this.elements = elements;
+            current = 0;
         }
 
         @Override
@@ -461,4 +384,24 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
         }
     }
 
+    private static class ReverseElementsSpliterator extends ElementsSpliterator {
+
+        private ReverseElementsSpliterator(Elements elements) {
+            super(elements);
+            current = elements.size() - 1;
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super Element> action) {
+            if (current >= 0) {
+                action.accept(elements.get(current));
+                current--;
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
 }
+//TODO - test all that refactoring, including using newMeasure() and removal of trailing empty measures

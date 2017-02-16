@@ -12,7 +12,7 @@ import jp.kshoji.javax.swing.event.EventListenerList;
 import static java8.util.J8Arrays.stream;
 
 // Forked from JFugue
-public final class MidiParser {
+public class MidiParser {
 
     private EventListenerList listenerList = new EventListenerList();
     private long[] tempNoteRegistry = new long[255];
