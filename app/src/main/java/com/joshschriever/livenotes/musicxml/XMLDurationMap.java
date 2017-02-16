@@ -12,7 +12,7 @@ public class XMLDurationMap {
         return noteDotted(duration * MAX_BEAT_TYPE / beatType);
     }
 
-    static int noteExtraTiedDurationForDuration(int duration, int beatType) {//TODO - handle ties
+    static int noteExtraTiedDurationForDuration(int duration, int beatType) {//TODO - handle ties - for rests, I still need to use the extra duration, but it won't be actually tied
         return noteExtraTiedDuration(duration * MAX_BEAT_TYPE / beatType);
     }
 

@@ -40,6 +40,12 @@ public final class MidiParser {
         restOnEvent(-1, false);
     }
 
+    public void startWithNote(MidiMessage message, long timeStamp) {
+        if (message instanceof ShortMessage) {
+            restOnEvent(timeStamp, ((ShortMessage) message).getData1() < 48);
+        }
+    }
+
     public void stop() {
         if (tempRestRegistry[0] != 0L) {
             restOffEvent(-1, false);
@@ -109,8 +115,11 @@ public final class MidiParser {
     private void restOnEvent(long timeStamp, boolean trebleClef) {
         tempRestRegistry[trebleClef ? 1 : 0] = timeStamp;
         roughRestRegistry[trebleClef ? 1 : 0] = System.currentTimeMillis();
+        Note note = new Note((byte) (trebleClef ? 50 : 45), 0L);
+        note.setRest(true);
+        fireNoteEvent(note);
     }
-//TODO - rests should be done, but test more thoroughly
+
     private void restOffEvent(long timeStamp, boolean trebleClef) {
         long duration = tempRestRegistry[trebleClef ? 1 : 0] == -1 || timeStamp == -1
                         ? System.currentTimeMillis() - roughRestRegistry[trebleClef ? 1 : 0]
@@ -132,7 +141,7 @@ public final class MidiParser {
         }
     }
 
-    private void fireParallelNoteEvent(Note event) { //TODO - handle chords
+    private void fireParallelNoteEvent(Note event) { //TODO - handle chords - including for rests
         Object[] listeners = listenerList.getListenerList();
 
         for (int i = listeners.length - 2; i >= 0; i -= 2) {

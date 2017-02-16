@@ -47,6 +47,7 @@ public class MidiToXMLRenderer implements MidiMessageRecipient {
             if (!recording) {
                 recording = true;
                 callbacks.onStartRecording();
+                parser.startWithNote(midiMessage, timeStamp);
             }
 
             parser.parse(midiMessage, timeStamp);

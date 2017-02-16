@@ -7,6 +7,7 @@ import org.jfugue.ParserListenerAdapter;
 import org.jfugue.Voice;
 
 import java8.lang.Integers;
+import java8.util.Optional;
 import java8.util.Spliterator;
 import java8.util.Spliterators.AbstractSpliterator;
 import java8.util.function.Consumer;
@@ -87,6 +88,8 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
                     docType.removeChild(xM);
                 }
             }
+            //TODO - remove any measures at the end whose only children are rests
+            //TODO --(make sure to remove only ending measures, not ones in the middle of the song)
         }
 
         return document;
@@ -340,8 +343,9 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
             elNote.appendChild(elAccidental);
         }
 
+        int iStaff = note.getValue() >= 48 ? 1 : 2;
         Element elStaff = new Element("staff");
-        elStaff.appendChild(note.getValue() >= 48 ? "1" : "2");
+        elStaff.appendChild(Integer.toString(iStaff));
         elNote.appendChild(elStaff);
 
         if (bTied) {
@@ -363,18 +367,23 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
             elNote.appendChild(elNotations);
         }
 
+        //TODO - this does things in terms of elCurMeasure, which won't work with multiple measures
         if (note.isRest()) {
-            if (iXMLDuration > 0) {
-                elCurMeasure.appendChild(elNote);
+            if (iXMLDuration == 0) {
+                firstNoteThatMatches(restMatches(iStaff, 0))
+                        .ifPresentOrElse(elOldNote -> elCurMeasure.removeChild(elOldNote),
+                                         () -> elCurMeasure.appendChild(elNote));
+            } else {
+                firstNoteThatMatches(restMatches(iStaff, 0))
+                        .ifPresent(elOldNote -> elCurMeasure.replaceChild(elOldNote, elNote));
             }
-        } else if (iXMLDuration == 0) {
-            elCurMeasure.appendChild(elNote);
         } else {
-            stream(root.getChildElements("part"))
-                    .flatMap(part -> stream(part.getChildElements("measure"))
-                            .flatMap(measure -> stream(measure.getChildElements("note"))))
-                    .filter(noteMatches(note.getValue(), 0)).findFirst()
-                    .ifPresent(elOldNote -> elCurMeasure.replaceChild(elOldNote, elNote));
+            if (iXMLDuration == 0) {
+                elCurMeasure.appendChild(elNote);
+            } else {
+                firstNoteThatMatches(noteMatches(note.getValue(), 0))
+                        .ifPresent(elOldNote -> elCurMeasure.replaceChild(elOldNote, elNote));
+            }
         }
     } //TODO - handle measures
 
@@ -389,6 +398,13 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
 
     private static String octaveForNoteValue(int value) {
         return Integer.toString(value / 12);
+    }
+
+    private static Predicate<Element> restMatches(int staff, int duration) {
+        return elNote -> elNote.getFirstChildElement("rest") != null
+                && elNote.getFirstChildElement("staff").getValue().equals(Integer.toString(staff))
+                && elNote.getFirstChildElement("duration")
+                         .getValue().equals(Integer.toString(duration));
     }
 
     private static Predicate<Element> noteMatches(int value, int duration) {
@@ -410,6 +426,13 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
         int alter = alterForNoteValue(value);
         return alter == 0 ? elAlter == null
                           : elAlter != null && elAlter.getValue().equals(Integer.toString(alter));
+    }
+
+    private Optional<Element> firstNoteThatMatches(Predicate<Element> predicate) {
+        return stream(root.getChildElements("part"))
+                .flatMap(part -> stream(part.getChildElements("measure"))
+                        .flatMap(measure -> stream(measure.getChildElements("note"))))
+                .filter(predicate).findFirst();
     }
 
     private static Stream<Element> stream(Elements elements) {
