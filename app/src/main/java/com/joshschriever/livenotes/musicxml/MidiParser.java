@@ -1,5 +1,6 @@
 package com.joshschriever.livenotes.musicxml;
 
+import org.jfugue.Measure;
 import org.jfugue.Note;
 import org.jfugue.ParserListener;
 
@@ -68,24 +69,17 @@ public class MidiParser {
     }
 
     private void parseShortMessage(ShortMessage message, long timestamp) {
-        switch (message.getCommand()) {
-            case ShortMessage.NOTE_OFF:
-                noteOffEvent(timestamp, message.getData1());
-                break;
-            case ShortMessage.NOTE_ON:
-                if (message.getData2() == 0) {
-                    noteOffEvent(timestamp, message.getData1());
-                } else {
-                    noteOnEvent(timestamp, message.getData1());
-                }
-                break;
+        if (message.getCommand() == ShortMessage.NOTE_ON) {
+            noteOnEvent(timestamp, message.getData1());
+        } else if (message.getCommand() == ShortMessage.NOTE_OFF) {
+            noteOffEvent(timestamp, message.getData1());
         }
     }
 
     private void noteOnEvent(long timestamp, int noteValue) {
         boolean trebleClef = noteValue >= 48;
         if (tempRestRegistry[trebleClef ? 1 : 0] != 0L) {
-            restOffEvent(timestamp - 1, trebleClef);
+            restOffEvent(timestamp, trebleClef);
         }
 
         tempNoteRegistry[noteValue] = timestamp;
@@ -108,7 +102,7 @@ public class MidiParser {
                                       trebleClef ? 48 : 0,
                                       trebleClef ? tempNoteRegistry.length : 48))
                 .allMatch(t -> t == 0L)) {
-            restOnEvent(timestamp + 1, trebleClef);
+            restOnEvent(timestamp, trebleClef);
         }
     }
 
@@ -140,13 +134,15 @@ public class MidiParser {
             }
         }
     }
+//TODO - handle chords - including for rests - use note.setHasAccompanyingNotes()
+//TODO - handle measures
+    private void fireMeasureEvent() {
+        Measure measure = new Measure();
+        Object[] listeners = this.listenerList.getListenerList();
 
-    private void fireParallelNoteEvent(Note event) { //TODO - handle chords - including for rests
-        Object[] listeners = listenerList.getListenerList();
-
-        for (int i = listeners.length - 2; i >= 0; i -= 2) {
-            if (listeners[i] == ParserListener.class) {
-                ((ParserListener) listeners[i + 1]).parallelNoteEvent(event);
+        for(int i = listeners.length - 2; i >= 0; i -= 2) {
+            if(listeners[i] == ParserListener.class) {
+                ((ParserListener)listeners[i + 1]).measureEvent(measure);
             }
         }
     }

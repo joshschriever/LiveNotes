@@ -2,7 +2,7 @@
 <resources>
     <integer name="min_tempo">30</integer>
     <integer name="max_tempo">300</integer>
-    <integer name="default_tempo">120</integer>
+    <integer name="default_tempo">100</integer>
 
     <integer-array name="simple_time_beats_options">
         <item>2</item>

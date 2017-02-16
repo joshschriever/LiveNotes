@@ -2,6 +2,7 @@ package com.joshschriever.livenotes.musicxml;
 
 import android.util.SparseArray;
 
+import org.jfugue.Measure;
 import org.jfugue.Note;
 import org.jfugue.ParserListenerAdapter;
 
@@ -73,7 +74,7 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
     }
 
     public void removeTrailingEmptyMeasures() {
-        streamInReverse(elPart.getChildElements("measure"))
+        streamInReverse(allMeasures())
                 .takeWhile(elMeasure -> elMeasure.getChildCount() == 0
                         || stream(elMeasure.getChildElements("note"))
                         .allMatch(elNote -> elNote.getFirstChildElement("rest") != null))
@@ -171,32 +172,28 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
         return ((beatsPerMeasure % 3) == 0) && ((beatsPerMeasure / 3) > 1);
     }
 
-    private int measureNumberOf(Element measure) {
-        return Integer.parseInt(measure.getAttributeValue("number"));
+    @Override
+    public void measureEvent(Measure measure) {
+        newMeasure();
     }
 
     private void newMeasure() {
-        int nextNumber = Integer.parseInt(
-                stream(elPart.getChildElements("measure"))
-                        .max((m1, m2) -> measureNumberOf(m1) - measureNumberOf(m2))
-                        .get().getAttributeValue("number")) + 1;
+        int nextNumber = Integer.parseInt(allMeasures().get(allMeasures().size() - 1)
+                                                       .getAttributeValue("number")) + 1;
 
         elCurMeasure = new Element("measure");
         elCurMeasure.addAttribute(new Attribute("number", Integer.toString(nextNumber)));
         elPart.appendChild(elCurMeasure);
     }
 
+    @Override
     public void noteEvent(Note note) {
-        doNote(note, false);
+        doNote(note);
     }
 
-    public void parallelNoteEvent(Note note) {
-        doNote(note, true);
-    }
-
-    private void doNote(Note note, boolean bChord) {
+    private void doNote(Note note) {
         Element elNote = new Element("note");
-        if (bChord) {
+        if (note.hasAccompanyingNotes()) {
             elNote.appendChild(new Element("chord"));
         }
 
@@ -304,7 +301,7 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
                                                          .replaceChild(elOldNote, elNote));
             }
         }
-    } //TODO - handle measures
+    }
 
     private static String stepForNoteValue(int value) {
         return Note.NOTES[value % 12].substring(0, 1);
@@ -348,9 +345,12 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
     }
 
     private Optional<Element> firstNoteThatMatches(Predicate<Element> predicate) {
-        return stream(elPart.getChildElements("measure"))
-                .flatMap(measure -> stream(measure.getChildElements("note")))
-                .filter(predicate).findFirst();
+        return stream(allMeasures()).flatMap(measure -> stream(measure.getChildElements("note")))
+                                    .filter(predicate).findFirst();
+    }
+
+    private Elements allMeasures() {
+        return elPart.getChildElements("measure");
     }
 
     private static Stream<Element> stream(Elements elements) {
@@ -404,4 +404,3 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
     }
 
 }
-//TODO - test all that refactoring, including using newMeasure() and removal of trailing empty measures

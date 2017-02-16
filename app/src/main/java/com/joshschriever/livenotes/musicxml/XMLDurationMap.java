@@ -4,15 +4,15 @@ public class XMLDurationMap {
 
     private static final int MAX_BEAT_TYPE = 8;
 
-    static String noteStringForDuration(int duration, int beatType) {
+    public static String noteStringForDuration(int duration, int beatType) {
         return noteString(duration * MAX_BEAT_TYPE / beatType);
     }
 
-    static boolean noteDottedForDuration(int duration, int beatType) {
+    public static boolean noteDottedForDuration(int duration, int beatType) {
         return noteDotted(duration * MAX_BEAT_TYPE / beatType);
     }
 
-    static int noteExtraTiedDurationForDuration(int duration, int beatType) {//TODO - handle ties - for rests, I still need to use the extra duration, but it won't be actually tied
+    public static int noteExtraTiedDurationForDuration(int duration, int beatType) {//TODO - handle ties - for rests, I still need to use the extra duration, but it won't be actually tied
         return noteExtraTiedDuration(duration * MAX_BEAT_TYPE / beatType);
     }
 
