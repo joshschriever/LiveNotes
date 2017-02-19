@@ -228,21 +228,23 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
         elDuration.appendChild(Integer.toString(iXMLDuration));
         elNote.appendChild(elDuration);
 
-        Element elTie;
-        Attribute atTieType;
         boolean bTied = false;
-        if (note.isStartOfTie()) {
-            elTie = new Element("tie");
-            atTieType = new Attribute("type", "start");
-            elTie.addAttribute(atTieType);
-            elNote.appendChild(elTie);
-            bTied = true;
-        } else if (note.isEndOfTie()) {
-            elTie = new Element("tie");
-            atTieType = new Attribute("type", "stop");
-            elTie.addAttribute(atTieType);
-            elNote.appendChild(elTie);
-            bTied = true;
+        if (!note.isRest()) {
+            Element elTie;
+            Attribute atTieType;
+            if (note.isStartOfTie()) {
+                elTie = new Element("tie");
+                atTieType = new Attribute("type", "start");
+                elTie.addAttribute(atTieType);
+                elNote.appendChild(elTie);
+                bTied = true;
+            } else if (note.isEndOfTie()) {
+                elTie = new Element("tie");
+                atTieType = new Attribute("type", "stop");
+                elTie.addAttribute(atTieType);
+                elNote.appendChild(elTie);
+                bTied = true;
+            }
         }
 
         Element elType = new Element("type");

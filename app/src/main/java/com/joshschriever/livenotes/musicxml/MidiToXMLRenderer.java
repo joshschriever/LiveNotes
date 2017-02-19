@@ -16,8 +16,15 @@ public class MidiToXMLRenderer implements MidiMessageRecipient {
     public MidiToXMLRenderer(Callbacks callbacks, int beats, int beatValue, int tempo) {
         this.callbacks = callbacks;
         renderer = new MusicXmlRenderer(beats, beatValue, tempo);
-        parser = new MidiParser();
+        parser = new MidiParser(measureLengthInMillis(beats, beatValue, tempo));
         parser.addParserListener(renderer);
+    }
+
+    private long measureLengthInMillis(int beats, int beatValue, int tempo) {
+        final boolean isCompound = (beats % 3 == 0) && (beats / 3 > 1);
+        final long basis = beats * 60_000 / tempo;
+        return isCompound ? basis / 3
+                          : basis * 4 / beatValue;
     }
 
     public void setReady() {

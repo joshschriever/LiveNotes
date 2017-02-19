@@ -16,15 +16,27 @@ import static java8.util.J8Arrays.stream;
 public class MidiParser {
 
     private EventListenerList listenerList = new EventListenerList();
+
     private long[] tempNoteRegistry = new long[255];
     private long[] tempRestRegistry = new long[] {0L, 0L};
     private long[] roughNoteRegistry = new long[255];
     private long[] roughRestRegistry = new long[] {0L, 0L};
+    private boolean[] tempNoteTieRegistry = new boolean[255];
+    private boolean[] tempNoteChordRegistry = new boolean[255];
+    private boolean[] tempRestChordRegistry = new boolean[] {false, false};
 
-    public MidiParser() {
+    private final long fullMeasureLength;
+    private long currentMeasureLength;
+
+    public MidiParser(long measureLength) {
+        fullMeasureLength = measureLength;
+        currentMeasureLength = 0L;
+
         for (int n = 0; n < 255; ++n) {
             tempNoteRegistry[n] = 0L;
             roughNoteRegistry[n] = 0L;
+            tempNoteTieRegistry[n] = false;
+            tempNoteChordRegistry[n] = false;
         }
     }
 
@@ -85,7 +97,7 @@ public class MidiParser {
         tempNoteRegistry[noteValue] = timestamp;
         roughNoteRegistry[noteValue] = System.currentTimeMillis();
         Note note = new Note((byte) noteValue, 0L);
-        fireNoteEvent(note);
+        doNoteOn(note);
     }
 
     private void noteOffEvent(long timestamp, int noteValue) {
@@ -93,9 +105,14 @@ public class MidiParser {
                         ? System.currentTimeMillis() - roughNoteRegistry[noteValue]
                         : timestamp - tempNoteRegistry[noteValue];
         Note note = new Note((byte) noteValue, duration);
-        fireNoteEvent(note);
+        note.setEndOfTie(tempNoteTieRegistry[noteValue]);
+        note.setHasAccompanyingNotes(tempNoteChordRegistry[noteValue]);
+
+        doNoteOff(note);
         tempNoteRegistry[noteValue] = 0L;
         roughNoteRegistry[noteValue] = 0L;
+        tempNoteTieRegistry[noteValue] = false;
+        tempNoteChordRegistry[noteValue] = false;
 
         boolean trebleClef = noteValue >= 48;
         if (stream(Arrays.copyOfRange(tempNoteRegistry,
@@ -111,7 +128,7 @@ public class MidiParser {
         roughRestRegistry[trebleClef ? 1 : 0] = System.currentTimeMillis();
         Note note = new Note((byte) (trebleClef ? 50 : 45), 0L);
         note.setRest(true);
-        fireNoteEvent(note);
+        doNoteOn(note);
     }
 
     private void restOffEvent(long timeStamp, boolean trebleClef) {
@@ -119,10 +136,31 @@ public class MidiParser {
                         ? System.currentTimeMillis() - roughRestRegistry[trebleClef ? 1 : 0]
                         : timeStamp - tempRestRegistry[trebleClef ? 1 : 0];
         Note note = new Note((byte) (trebleClef ? 50 : 45), duration);
+        note.setHasAccompanyingNotes(tempRestChordRegistry[trebleClef ? 1 : 0]);
         note.setRest(true);
-        fireNoteEvent(note);
+
+        doNoteOff(note);
         tempRestRegistry[trebleClef ? 1 : 0] = 0L;
         roughRestRegistry[trebleClef ? 1 : 0] = 0L;
+        tempRestChordRegistry[trebleClef ? 1 : 0] = false;
+    }
+
+    private void doNoteOn(Note event) {
+        //TODO - figure out if chord - including for rests - use note.setHasAccompanyingNotes()
+        //TODO - store whether chord or not in temp registry
+        fireNoteEvent(event);
+    }
+
+    private void doNoteOff(Note event) {
+        if (currentMeasureLength + event.getDuration() > fullMeasureLength) {
+            newMeasure();
+            event.setDuration(event.getDuration() - (fullMeasureLength - currentMeasureLength));
+            event.setEndOfTie(!event.isRest());
+            doNoteOff(event);
+        } else {
+            currentMeasureLength += event.getDuration();//TODO - chords will mess this up
+            fireNoteEvent(event);
+        }
     }
 
     private void fireNoteEvent(Note event) {
@@ -134,11 +172,17 @@ public class MidiParser {
             }
         }
     }
-//TODO - handle chords - including for rests - use note.setHasAccompanyingNotes()
-//TODO - handle measures
+
+    private void newMeasure() {
+        //TODO - stop all notes currently on (start tie)
+        fireMeasureEvent();
+        currentMeasureLength = 0L;
+        //TODO - restart notes that were on (end tie) (use tempNoteTieRegistry)
+    }
+
     private void fireMeasureEvent() {
         Measure measure = new Measure();
-        Object[] listeners = this.listenerList.getListenerList();
+        Object[] listeners = listenerList.getListenerList();
 
         for(int i = listeners.length - 2; i >= 0; i -= 2) {
             if(listeners[i] == ParserListener.class) {
