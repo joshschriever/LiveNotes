@@ -230,19 +230,16 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
 
         boolean bTied = false;
         if (!note.isRest()) {
-            Element elTie;
-            Attribute atTieType;
-            if (note.isStartOfTie()) {
-                elTie = new Element("tie");
-                atTieType = new Attribute("type", "start");
-                elTie.addAttribute(atTieType);
-                elNote.appendChild(elTie);
+            if (note.isEndOfTie()) {
+                Element elTieStop = new Element("tie");
+                elTieStop.addAttribute(new Attribute("type", "stop"));
+                elNote.appendChild(elTieStop);
                 bTied = true;
-            } else if (note.isEndOfTie()) {
-                elTie = new Element("tie");
-                atTieType = new Attribute("type", "stop");
-                elTie.addAttribute(atTieType);
-                elNote.appendChild(elTie);
+            }
+            if (note.isStartOfTie()) {
+                Element elTieStart = new Element("tie");
+                elTieStart.addAttribute(new Attribute("type", "start"));
+                elNote.appendChild(elTieStart);
                 bTied = true;
             }
         }
@@ -267,18 +264,16 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
 
         if (bTied) {
             Element elNotations = new Element("notations");
-            Element elTied;
-            Attribute atType;
+
+            if (note.isEndOfTie()) {
+                Element elTiedStop = new Element("tied");
+                elTiedStop.addAttribute(new Attribute("type", "stop"));
+                elNotations.appendChild(elTiedStop);
+            }
             if (note.isStartOfTie()) {
-                elTied = new Element("tied");
-                atType = new Attribute("type", "start");
-                elTied.addAttribute(atType);
-                elNotations.appendChild(elTied);
-            } else if (note.isEndOfTie()) {
-                elTied = new Element("tied");
-                atType = new Attribute("type", "stop");
-                elTied.addAttribute(atType);
-                elNotations.appendChild(elTied);
+                Element elTiedStart = new Element("tied");
+                elTiedStart.addAttribute(new Attribute("type", "start"));
+                elNotations.appendChild(elTiedStart);
             }
 
             elNote.appendChild(elNotations);
