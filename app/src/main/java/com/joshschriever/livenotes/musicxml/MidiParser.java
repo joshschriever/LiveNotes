@@ -19,8 +19,6 @@ public class MidiParser {
 
     private long[] tempNoteRegistry = new long[255];
     private long[] tempRestRegistry = new long[] {0L, 0L};
-    private long[] roughNoteRegistry = new long[255];
-    private long[] roughRestRegistry = new long[] {0L, 0L};
     private boolean[] tempNoteTieRegistry = new boolean[255];
     private boolean[] tempNoteChordRegistry = new boolean[255];
     private boolean[] tempRestChordRegistry = new boolean[] {false, false};
@@ -36,7 +34,6 @@ public class MidiParser {
 
         for (int n = 0; n < 255; ++n) {
             tempNoteRegistry[n] = 0L;
-            roughNoteRegistry[n] = 0L;
             tempNoteTieRegistry[n] = false;
             tempNoteChordRegistry[n] = false;
         }
@@ -61,34 +58,37 @@ public class MidiParser {
     }
 
     public void startWithRests() {
-        restOnEvent(-1, true);
-        restOnEvent(-1, false);
+        long timeStamp = System.currentTimeMillis();
+        restOnEvent(timeStamp, true);
+        restOnEvent(timeStamp, false);
     }
 
-    public void startWithNote(MidiMessage message, long timeStamp) {
+    public void startWithNote(MidiMessage message) {
         if (message instanceof ShortMessage) {
-            restOnEvent(timeStamp, ((ShortMessage) message).getData1() < 48);
+            restOnEvent(System.currentTimeMillis(), ((ShortMessage) message).getData1() < 48);
         }
     }
 
     public void stop() {
+        long timeStamp = System.currentTimeMillis();
+
         if (tempRestRegistry[0] != 0L) {
-            restOffEvent(-1, false);
+            restOffEvent(timeStamp, false);
         }
         if (tempRestRegistry[1] != 0L) {
-            restOffEvent(-1, true);
+            restOffEvent(timeStamp, true);
         }
 
         for (int n = 0; n < 255; ++n) {
             if (tempNoteRegistry[n] != 0L) {
-                noteOffEvent(-1, n);
+                noteOffEvent(timeStamp, n);
             }
         }
     }
 
-    public void parse(MidiMessage message, long timestamp) {
+    public void parse(MidiMessage message) {
         if (message instanceof ShortMessage) {
-            parseShortMessage((ShortMessage) message, timestamp);
+            parseShortMessage((ShortMessage) message, System.currentTimeMillis());
         }
     }
 
@@ -107,7 +107,6 @@ public class MidiParser {
         }
 
         tempNoteRegistry[noteValue] = timestamp;
-        roughNoteRegistry[noteValue] = System.currentTimeMillis();
         Note note = new Note((byte) noteValue, 0L);
         doNoteOn(note);
     }
@@ -116,7 +115,6 @@ public class MidiParser {
         doNoteOff(noteOffNoteFor(timestamp, noteValue));
 
         tempNoteRegistry[noteValue] = 0L;
-        roughNoteRegistry[noteValue] = 0L;
         tempNoteTieRegistry[noteValue] = false;
         tempNoteChordRegistry[noteValue] = false;
 
@@ -130,10 +128,7 @@ public class MidiParser {
     }
 
     private Note noteOffNoteFor(long timestamp, int noteValue) {
-        long duration = timestamp == -1 || tempNoteRegistry[noteValue] == -1
-                        ? System.currentTimeMillis() - roughNoteRegistry[noteValue]
-                        : timestamp - tempNoteRegistry[noteValue];
-        Note note = new Note((byte) noteValue, duration);
+        Note note = new Note((byte) noteValue, timestamp - tempNoteRegistry[noteValue]);
         note.setEndOfTie(tempNoteTieRegistry[noteValue]);
         note.setHasAccompanyingNotes(tempNoteChordRegistry[noteValue]);
         return note;
@@ -141,7 +136,6 @@ public class MidiParser {
 
     private void restOnEvent(long timeStamp, boolean trebleClef) {
         tempRestRegistry[trebleClef ? 1 : 0] = timeStamp;
-        roughRestRegistry[trebleClef ? 1 : 0] = System.currentTimeMillis();
         Note note = new Note((byte) (trebleClef ? 50 : 45), 0L);
         note.setRest(true);
         doNoteOn(note);
@@ -151,29 +145,27 @@ public class MidiParser {
         doNoteOff(restOffNoteFor(timeStamp, trebleClef));
 
         tempRestRegistry[trebleClef ? 1 : 0] = 0L;
-        roughRestRegistry[trebleClef ? 1 : 0] = 0L;
         tempRestChordRegistry[trebleClef ? 1 : 0] = false;
     }
 
     private Note restOffNoteFor(long timeStamp, boolean trebleClef) {
-        long duration = timeStamp == -1 || tempRestRegistry[trebleClef ? 1 : 0] == -1
-                        ? System.currentTimeMillis() - roughRestRegistry[trebleClef ? 1 : 0]
-                        : timeStamp - tempRestRegistry[trebleClef ? 1 : 0];
-        Note note = new Note((byte) (trebleClef ? 50 : 45), duration);
+        Note note = new Note((byte) (trebleClef ? 50 : 45),
+                             timeStamp - tempRestRegistry[trebleClef ? 1 : 0]);
         note.setHasAccompanyingNotes(tempRestChordRegistry[trebleClef ? 1 : 0]);
         note.setRest(true);
         return note;
     }
 
+    //TODO - doNoteOn also needs to make a new measure if needed - compare the current time to when the last new measure was started
     private void doNoteOn(Note event) {
         //TODO - figure out if chord - including for rests - use note.setHasAccompanyingNotes()
         //TODO - store whether chord or not in temp registry
         fireNoteEvent(event);
     }
-//I might just have to use System time for everything so I can check the current time. Because placeholders are getting put in the wrong place.
+
     private void doNoteOff(Note event) {
         if (currentMeasureLength + event.getDuration() >= fullMeasureLength + margin) {
-            newMeasure();
+            newMeasure(System.currentTimeMillis());//TODO
             event.setDuration(event.getDuration() - (fullMeasureLength - currentMeasureLength));
             event.setEndOfTie(!event.isRest());
             doNoteOff(event);
@@ -183,46 +175,45 @@ public class MidiParser {
         }
     }
 
-    private void newMeasure() {
-        stopCurrentNotesForMeasureBreak();
+    private void newMeasure(long timeStamp) {
+        stopCurrentNotesForMeasureBreak(timeStamp);
         fireMeasureEvent();
         currentMeasureLength = 0L;
-        restartNotesAfterMeasureBreak();
+        restartNotesAfterMeasureBreak(timeStamp);
     }
 
-    private void stopCurrentNotesForMeasureBreak() {
+    private void stopCurrentNotesForMeasureBreak(long timeStamp) {
         if (tempRestRegistry[0] != 0L) {
-            fireNoteEvent(restOffNoteFor(-1, false));
+            fireNoteEvent(restOffNoteFor(timeStamp, false));
         }
         if (tempRestRegistry[1] != 0L) {
-            fireNoteEvent(restOffNoteFor(-1, true));
+            fireNoteEvent(restOffNoteFor(timeStamp, true));
         }
 
         for (int n = 0; n < 255; ++n) {
             if (tempNoteRegistry[n] != 0L) {
-                Note note = noteOffNoteFor(-1, n);
+                Note note = noteOffNoteFor(timeStamp, n);
                 note.setStartOfTie(true);
                 fireNoteEvent(note);
             }
         }
     }
 
-    private void restartNotesAfterMeasureBreak() {
+    private void restartNotesAfterMeasureBreak(long timeStamp) {
         if (tempRestRegistry[0] != 0L) {
             tempRestChordRegistry[0] = false;
-            restOnEvent(-1, false);
+            restOnEvent(timeStamp, false);
         }
         if (tempRestRegistry[1] != 0L) {
             tempRestChordRegistry[1] = false;
-            restOnEvent(-1, true);
+            restOnEvent(timeStamp, true);
         }
 
         for (int n = 0; n < 255; ++n) {
             if (tempNoteRegistry[n] != 0L) {
                 tempNoteChordRegistry[n] = false;
                 tempNoteTieRegistry[n] = true;
-                tempNoteRegistry[n] = -1;
-                roughNoteRegistry[n] = System.currentTimeMillis();
+                tempNoteRegistry[n] = timeStamp;
                 Note note = new Note((byte) n, 0L);
                 note.setEndOfTie(true);
                 doNoteOn(note);
