@@ -25,11 +25,13 @@ public class MidiParser {
     private boolean[] tempNoteChordRegistry = new boolean[255];
     private boolean[] tempRestChordRegistry = new boolean[] {false, false};
 
+    private final long margin;
     private final long fullMeasureLength;
     private long currentMeasureLength;
 
-    public MidiParser(long measureLength) {
-        fullMeasureLength = measureLength;
+    public MidiParser(int beatsPerMeasure, int tempo) {
+        margin = marginInMillis(beatsPerMeasure, tempo);
+        fullMeasureLength = measureLengthInMillis(beatsPerMeasure, tempo);
         currentMeasureLength = 0L;
 
         for (int n = 0; n < 255; ++n) {
@@ -38,6 +40,16 @@ public class MidiParser {
             tempNoteTieRegistry[n] = false;
             tempNoteChordRegistry[n] = false;
         }
+    }
+
+    private long marginInMillis(int beats, int tempo) {
+        final boolean isCompound = (beats % 3 == 0) && (beats / 3 > 1);
+        return 60_000 / tempo / (isCompound ? 3 : 1) / 4;
+    }
+
+    private long measureLengthInMillis(int beats, int tempo) {
+        final boolean isCompound = (beats % 3 == 0) && (beats / 3 > 1);
+        return beats * 60_000 / tempo / (isCompound ? 3 : 1);
     }
 
     public void addParserListener(ParserListener listener) {
@@ -158,9 +170,9 @@ public class MidiParser {
         //TODO - store whether chord or not in temp registry
         fireNoteEvent(event);
     }
-
+//I might just have to use System time for everything so I can check the current time. Because placeholders are getting put in the wrong place.
     private void doNoteOff(Note event) {
-        if (currentMeasureLength + event.getDuration() > fullMeasureLength) {
+        if (currentMeasureLength + event.getDuration() >= fullMeasureLength + margin) {
             newMeasure();
             event.setDuration(event.getDuration() - (fullMeasureLength - currentMeasureLength));
             event.setEndOfTie(!event.isRest());

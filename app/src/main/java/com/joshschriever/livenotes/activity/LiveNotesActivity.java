@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.media.MediaScannerConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.WindowManager.LayoutParams;
@@ -149,10 +150,11 @@ public class LiveNotesActivity extends Activity
     }
 
     private void setScore(SScore score) {
-        scoreView.setScore(score,
-                           stream(new Boolean[score.numParts()])
-                                   .map(__ -> Boolean.TRUE).collect(toList()),
-                           1.0f);
+        new Handler(getMainLooper()).post(
+                () -> scoreView.setScore(score,
+                                         stream(new Boolean[score.numParts()])
+                                                 .map(__ -> Boolean.TRUE).collect(toList()),
+                                         1.0f));
     }
 
     private void onReadyToRecord() {
