@@ -1,5 +1,12 @@
 package com.joshschriever.livenotes.musicxml;
 
+//TODO - rename this to XMLDurationUtil
+//TODO - move everything that has anything to do with durations into here
+//TODO - parser will figure out the xml duration, and set that on the note, instead of setting the duration in millis
+
+//TODO - a method to get base duration - basically duration minus extraTiedDuration
+
+//TODO - default precision needs to be lower
 public class XMLDurationMap {
 
     private static final int MAX_BEAT_TYPE = 8;
@@ -12,7 +19,7 @@ public class XMLDurationMap {
         return noteDotted(duration * MAX_BEAT_TYPE / beatType);
     }
 
-    public static int noteExtraTiedDurationForDuration(int duration, int beatType) {//TODO - handle ties
+    public static int noteExtraTiedDurationForDuration(int duration, int beatType) {
         return noteExtraTiedDuration(duration * MAX_BEAT_TYPE / beatType);
     }
 

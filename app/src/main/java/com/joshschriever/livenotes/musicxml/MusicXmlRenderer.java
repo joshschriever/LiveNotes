@@ -2,9 +2,7 @@ package com.joshschriever.livenotes.musicxml;
 
 import android.util.SparseArray;
 
-import org.jfugue.Measure;
 import org.jfugue.Note;
-import org.jfugue.ParserListenerAdapter;
 
 import java8.lang.Integers;
 import java8.util.Optional;
@@ -21,7 +19,7 @@ import nu.xom.Element;
 import nu.xom.Elements;
 
 // Forked from JFugue
-public class MusicXmlRenderer extends ParserListenerAdapter {
+public class MusicXmlRenderer implements SimpleParserListener {
 
     private static final int ONE_MINUTE = 60_000;
     private static final int DIVISIONS_PER_BEAT = 4;
@@ -68,6 +66,7 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
         doFirstMeasure();
     }
 
+    //TODO - remove all occurrences of timeStamp attribute
     public String getMusicXMLString() {
         return document.toXML().replaceAll("<duration>0</duration>",
                                            "<duration>1</duration>");
@@ -173,11 +172,7 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
     }
 
     @Override
-    public void measureEvent(Measure measure) {
-        newMeasure();
-    }
-
-    private void newMeasure() {
+    public void measureEvent() {
         int nextNumber = Integer.parseInt(allMeasures().get(allMeasures().size() - 1)
                                                        .getAttributeValue("number")) + 1;
 
@@ -186,8 +181,11 @@ public class MusicXmlRenderer extends ParserListenerAdapter {
         elPart.appendChild(elCurMeasure);
     }
 
+    //TODO - handle ties
+    //TODO - save timeStamp as an attribute on notes and use it to place tied notes in the correct positions
+    //TODO - handle chords - compare timeStamp to timeStamp attributes on notes
     @Override
-    public void noteEvent(Note note) {
+    public void noteEvent(Note note, long timeStamp) {
         doNote(note);
     }
 

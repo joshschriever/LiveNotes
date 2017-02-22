@@ -1,21 +1,21 @@
 package com.joshschriever.livenotes.musicxml;
 
-import org.jfugue.Measure;
 import org.jfugue.Note;
-import org.jfugue.ParserListener;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import jp.kshoji.javax.sound.midi.MidiMessage;
 import jp.kshoji.javax.sound.midi.ShortMessage;
-import jp.kshoji.javax.swing.event.EventListenerList;
 
 import static java8.util.J8Arrays.stream;
+import static java8.util.stream.StreamSupport.stream;
 
 // Forked from JFugue
 public class MidiParser {
 
-    private EventListenerList listenerList = new EventListenerList();
+    private List<SimpleParserListener> listeners = new ArrayList<>();
 
     private long[] tempNoteRegistry = new long[255];
     private long[] tempRestRegistry = new long[] {0L, 0L};
@@ -48,12 +48,10 @@ public class MidiParser {
         return beats * 60_000 / tempo / (isCompound ? 3 : 1);
     }
 
-    public void addParserListener(ParserListener listener) {
-        listenerList.add(ParserListener.class, listener);
-    }
-
-    public void removeParserListener(ParserListener listener) {
-        listenerList.remove(ParserListener.class, listener);
+    public void addParserListener(SimpleParserListener listener) {
+        if (listeners.indexOf(listener) == -1) {
+            listeners.add(listener);
+        }
     }
 
     public void startWithRests() {
@@ -161,15 +159,12 @@ public class MidiParser {
             newMeasure(currentMeasureStartTime + fullMeasureLength);
         }
 
-        //TODO - figure out if chord - including for rests - use note.setHasAccompanyingNotes()
-        //TODO - store whether chord or not in temp registry
-
         if (event.isRest()) {
             tempRestRegistry[event.getValue() >= 48 ? 1 : 0] = timeStamp;
         } else {
             tempNoteRegistry[event.getValue()] = timeStamp;
         }
-        fireNoteEvent(event);
+        fireNoteEvent(event, timeStamp);
     }
 
     private void doNoteOff(long timeStamp, Note event) {
@@ -180,7 +175,7 @@ public class MidiParser {
             newMeasure(currentMeasureStartTime + fullMeasureLength);
             doNoteOff(timeStamp, event);
         } else {
-            fireNoteEvent(event);
+            fireNoteEvent(event, timeStamp);
         }
     }
 
@@ -193,17 +188,17 @@ public class MidiParser {
 
     private void stopCurrentNotesForMeasureBreak(long timeStamp) {
         if (tempRestRegistry[0] != 0L) {
-            fireNoteEvent(restOffNoteFor(timeStamp, false));
+            fireNoteEvent(restOffNoteFor(timeStamp, false), timeStamp);
         }
         if (tempRestRegistry[1] != 0L) {
-            fireNoteEvent(restOffNoteFor(timeStamp, true));
+            fireNoteEvent(restOffNoteFor(timeStamp, true), timeStamp);
         }
 
         for (int n = 0; n < 255; ++n) {
             if (tempNoteRegistry[n] != 0L) {
                 Note note = noteOffNoteFor(timeStamp, n);
                 note.setStartOfTie(true);
-                fireNoteEvent(note);
+                fireNoteEvent(note, timeStamp);
             }
         }
     }
@@ -230,25 +225,12 @@ public class MidiParser {
         }
     }
 
-    private void fireNoteEvent(Note event) {
-        Object[] listeners = listenerList.getListenerList();
-
-        for (int i = listeners.length - 2; i >= 0; i -= 2) {
-            if (listeners[i] == ParserListener.class) {
-                ((ParserListener) listeners[i + 1]).noteEvent(event);
-            }
-        }
+    private void fireNoteEvent(Note event, long timeStamp) {
+        stream(listeners).forEach(listener -> listener.noteEvent(event, timeStamp));
     }
 
     private void fireMeasureEvent() {
-        Measure measure = new Measure();
-        Object[] listeners = listenerList.getListenerList();
-
-        for (int i = listeners.length - 2; i >= 0; i -= 2) {
-            if (listeners[i] == ParserListener.class) {
-                ((ParserListener) listeners[i + 1]).measureEvent(measure);
-            }
-        }
+        stream(listeners).forEach(SimpleParserListener::measureEvent);
     }
 
 }
