@@ -32,6 +32,15 @@ public class Note {
     public final String type;
     public final boolean isDotted;
 
+    public Builder newCopy() {
+        return new Builder(timeStamp, durationMillis, value, isRest)
+                .withDuration(duration)
+                .withEndOfTie(isEndOfTie)
+                .withStartOfTie(isStartOfTie)
+                .withType(type)
+                .withDotted(isDotted);
+    }
+
     public static Builder newNote(long timeStamp, long durationMillis, int value) {
         return new Builder(timeStamp, durationMillis, value, false);
     }

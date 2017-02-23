@@ -4,7 +4,7 @@ import java.util.List;
 
 public interface SimpleParserListener {
 
-    void noteEvent(Note note, List<Note> tiedNotes);
+    void noteEvent(Note baseNote, List<Note> tiedNotes);
 
     void measureEvent();
 }

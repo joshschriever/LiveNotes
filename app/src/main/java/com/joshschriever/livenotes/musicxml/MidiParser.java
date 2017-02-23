@@ -1,5 +1,7 @@
 package com.joshschriever.livenotes.musicxml;
 
+import android.util.Pair;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -18,28 +20,20 @@ public class MidiParser {
     private long[] tempRestRegistry = new long[] {0L, 0L};
     private boolean[] tempNoteTieRegistry = new boolean[255];
 
+    private DurationUtil durationUtil;
     private final long margin;
     private final long fullMeasureLength;
     private long currentMeasureStartTime;
 
-    public MidiParser(int beatsPerMeasure, int tempo) {
-        margin = marginInMillis(beatsPerMeasure, tempo);
-        fullMeasureLength = measureLengthInMillis(beatsPerMeasure, tempo);
+    public MidiParser(int beatsPerMeasure, int beatType, int tempo) {
+        durationUtil = new DurationUtil(beatsPerMeasure, beatType, tempo);
+        margin = durationUtil.shortestNoteLengthInMillis();
+        fullMeasureLength = durationUtil.measureLengthInMillis();
 
         for (int n = 0; n < 255; ++n) {
             tempNoteRegistry[n] = 0L;
             tempNoteTieRegistry[n] = false;
         }
-    }
-
-    private long marginInMillis(int beats, int tempo) {
-        final boolean isCompound = (beats % 3 == 0) && (beats / 3 > 1);
-        return 60_000 / tempo / (isCompound ? 3 : 1) / 4;
-    }
-
-    private long measureLengthInMillis(int beats, int tempo) {
-        final boolean isCompound = (beats % 3 == 0) && (beats / 3 > 1);
-        return beats * 60_000 / tempo / (isCompound ? 3 : 1);
     }
 
     public void addParserListener(SimpleParserListener listener) {
@@ -97,11 +91,10 @@ public class MidiParser {
             restOffEvent(timeStamp, trebleClef);
         }
 
-        tempNoteRegistry[noteValue] = timeStamp;
-        Note note = Note.newNote(timeStamp, 0L, noteValue).build();
-
         newMeasureIfNeededForNoteOn(timeStamp);
-        fireNoteEvent(note);
+
+        tempNoteRegistry[noteValue] = timeStamp;
+        fireNoteEvent(Note.newNote(timeStamp, 0L, noteValue).build());
     }
 
     private void noteOffEvent(long timeStamp, int noteValue) {
@@ -129,11 +122,10 @@ public class MidiParser {
     }
 
     private void restOnEvent(long timeStamp, boolean trebleClef) {
-        tempRestRegistry[trebleClef ? 1 : 0] = timeStamp;
-        Note note = Note.newRest(timeStamp, 0L, trebleClef).build();
-
         newMeasureIfNeededForNoteOn(timeStamp);
-        fireNoteEvent(note);
+
+        tempRestRegistry[trebleClef ? 1 : 0] = timeStamp;
+        fireNoteEvent(Note.newRest(timeStamp, 0L, trebleClef).build());
     }
 
     private void restOffEvent(long timeStamp, boolean trebleClef) {
@@ -211,16 +203,8 @@ public class MidiParser {
     }
 
     private void fireNoteEvent(Note note) {
-        Note firstNote = note;//TODO
-        List<Note> tiedNotes = new ArrayList<>();//TODO
-        //TODO - convert the given note into the proper sequence of tied notes
-        //TODO - even for the first one, get the duration, string, dotted, etc, here
-
-        fireNoteEvent(firstNote, tiedNotes);
-    }
-
-    private void fireNoteEvent(Note note, List<Note> tiedNotes) {
-        stream(listeners).forEach(listener -> listener.noteEvent(note, tiedNotes));
+        Pair<Note, List<Note>> pair = durationUtil.getNoteSequenceFromNote(note);
+        stream(listeners).forEach(listener -> listener.noteEvent(pair.first, pair.second));
     }
 
     private void fireMeasureEvent() {

@@ -4,7 +4,6 @@ import android.util.SparseArray;
 
 import java.util.List;
 
-import java8.lang.Integers;
 import java8.util.Optional;
 import java8.util.Spliterator;
 import java8.util.Spliterators.AbstractSpliterator;
@@ -20,9 +19,6 @@ import nu.xom.Elements;
 
 // Based on JFugue
 public class MusicXmlRenderer implements SimpleParserListener {
-
-    private static final int ONE_MINUTE = 60_000;
-    private static final int DIVISIONS_PER_BEAT = 4;
 
     private static final String[] NOTES = new String[]
             {"C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B"};
@@ -41,14 +37,12 @@ public class MusicXmlRenderer implements SimpleParserListener {
 
     private int beatsPerMeasure;
     private int beatType;
-    private int markedTempo;
-    private int actualBeatsTempo;
+    private int tempo;
 
     public MusicXmlRenderer(int beatsPerMeasure, int beatType, int tempo) {
         this.beatsPerMeasure = beatsPerMeasure;
         this.beatType = beatType;
-        markedTempo = tempo;
-        actualBeatsTempo = markedTempo * (isTimeSignatureCompound() ? 3 : 1);
+        this.tempo = tempo;
 
         elRoot = new Element("score-partwise");
         Element elID = new Element("identification");
@@ -100,7 +94,7 @@ public class MusicXmlRenderer implements SimpleParserListener {
 
             Element elAttributes = new Element("attributes");
             Element elDivisions = new Element("divisions");
-            elDivisions.appendChild(Integer.toString(DIVISIONS_PER_BEAT));
+            elDivisions.appendChild(Integer.toString(DurationUtil.DIVISIONS_PER_BEAT));
             elAttributes.appendChild(elDivisions);
 
             Element elKey = new Element("key");
@@ -137,12 +131,12 @@ public class MusicXmlRenderer implements SimpleParserListener {
             Element elBeatUnit = new Element("beat-unit");
             elBeatUnit.appendChild(getBeatUnitString());
             elMetronome.appendChild(elBeatUnit);
-            if (isTimeSignatureCompound()) {
+            if (DurationUtil.isTimeSignatureCompound(beatsPerMeasure)) {
                 elMetronome.appendChild(new Element("beat-unit-dot"));
             }
 
             Element elPerMinute = new Element("per-minute");
-            elPerMinute.appendChild(Integer.toString(markedTempo));
+            elPerMinute.appendChild(Integer.toString(tempo));
             elMetronome.appendChild(elPerMinute);
 
             elDirectionType.appendChild(elMetronome);
@@ -166,11 +160,8 @@ public class MusicXmlRenderer implements SimpleParserListener {
     }
 
     private String getBeatUnitString() {
-        return BEAT_UNIT_STRINGS.get(beatType / (isTimeSignatureCompound() ? 2 : 1));
-    }
-
-    private boolean isTimeSignatureCompound() {
-        return ((beatsPerMeasure % 3) == 0) && ((beatsPerMeasure / 3) > 1);
+        return BEAT_UNIT_STRINGS.get(
+                beatType / (DurationUtil.isTimeSignatureCompound(beatsPerMeasure) ? 2 : 1));
     }
 
     @Override
@@ -188,8 +179,8 @@ public class MusicXmlRenderer implements SimpleParserListener {
     //TODO - handle chords - compare timeStamp to timeStamp attributes on notes
     //TODO --- to mark a chord, insert new Element("chord") as the first child of the note element
     @Override
-    public void noteEvent(Note note, List<Note> tiedNotes) {
-        doNote(note);
+    public void noteEvent(Note baseNote, List<Note> tiedNotes) {
+        doNote(baseNote);
     }
 
     private void doNote(Note note) {
@@ -216,14 +207,8 @@ public class MusicXmlRenderer implements SimpleParserListener {
             elNote.appendChild(elPitch);
         }
 
-        int iXMLDuration = note.durationMillis == 0L
-                           ? 0
-                           : Integers.max(note.isRest ? 0 : 1,
-                                          (int) (note.durationMillis * DIVISIONS_PER_BEAT
-                                                  * actualBeatsTempo / ONE_MINUTE));
-
         Element elDuration = new Element("duration");
-        elDuration.appendChild(Integer.toString(iXMLDuration));
+        elDuration.appendChild(Integer.toString(note.duration));
         elNote.appendChild(elDuration);
 
         boolean bTied = false;
@@ -243,9 +228,9 @@ public class MusicXmlRenderer implements SimpleParserListener {
         }
 
         Element elType = new Element("type");
-        elType.appendChild(XMLDurationMap.noteStringForDuration(iXMLDuration, beatType));
+        elType.appendChild(note.type);
         elNote.appendChild(elType);
-        if (XMLDurationMap.noteDottedForDuration(iXMLDuration, beatType)) {
+        if (note.isDotted) {
             elNote.appendChild(new Element("dot"));
         }
 
@@ -278,7 +263,7 @@ public class MusicXmlRenderer implements SimpleParserListener {
         }
 
         if (note.isRest) {
-            if (iXMLDuration == 0) {
+            if (note.duration == 0) {
                 firstNoteThatMatches(restMatches(iStaff, 0))
                         .ifPresentOrElse(elOldNote -> elOldNote.getParent().removeChild(elOldNote),
                                          () -> elCurMeasure.appendChild(elNote));
@@ -288,7 +273,7 @@ public class MusicXmlRenderer implements SimpleParserListener {
                                                          .replaceChild(elOldNote, elNote));
             }
         } else {
-            if (iXMLDuration == 0) {
+            if (note.duration == 0) {
                 elCurMeasure.appendChild(elNote);
             } else {
                 firstNoteThatMatches(noteMatches(note.value, 0))
