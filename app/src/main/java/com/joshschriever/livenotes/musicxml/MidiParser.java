@@ -97,15 +97,15 @@ public class MidiParser {
             restOffEvent(timeStamp, trebleClef);
         }
 
-        Note note = new Note((byte) noteValue, 0L);
+        tempNoteRegistry[noteValue] = timeStamp;
+        Note note = Note.newNote(timeStamp, 0L, noteValue).build();
 
         newMeasureIfNeededForNoteOn(timeStamp);
-        tempNoteRegistry[noteValue] = timeStamp;
         fireNoteEvent(note);
     }
 
     private void noteOffEvent(long timeStamp, int noteValue) {
-        doNoteOff(noteOffNoteFor(timeStamp, noteValue));
+        doNoteOff(timeStamp, noteOffNoteFor(timeStamp, noteValue, false));
 
         tempNoteRegistry[noteValue] = 0L;
         tempNoteTieRegistry[noteValue] = false;
@@ -119,41 +119,47 @@ public class MidiParser {
         }
     }
 
-    private Note noteOffNoteFor(long timeStamp, int noteValue) {
-        Note note = new Note((byte) noteValue, timeStamp - tempNoteRegistry[noteValue]);
-        note.setEndOfTie(tempNoteTieRegistry[noteValue]);
-        return note;
+    private Note noteOffNoteFor(long timeStamp, int noteValue, boolean startOfTie) {
+        long startTime = tempNoteRegistry[noteValue];
+
+        return Note.newNote(startTime, timeStamp - startTime, noteValue)
+                   .withEndOfTie(tempNoteTieRegistry[noteValue])
+                   .withStartOfTie(startOfTie)
+                   .build();
     }
 
     private void restOnEvent(long timeStamp, boolean trebleClef) {
-        Note note = new Note((byte) (trebleClef ? 50 : 45), 0L);
-        note.setRest(true);
+        tempRestRegistry[trebleClef ? 1 : 0] = timeStamp;
+        Note note = Note.newRest(timeStamp, 0L, trebleClef).build();
 
         newMeasureIfNeededForNoteOn(timeStamp);
-        tempRestRegistry[trebleClef ? 1 : 0] = timeStamp;
         fireNoteEvent(note);
     }
 
     private void restOffEvent(long timeStamp, boolean trebleClef) {
-        doNoteOff(restOffNoteFor(timeStamp, trebleClef));
+        doNoteOff(timeStamp, restOffNoteFor(timeStamp, trebleClef));
 
         tempRestRegistry[trebleClef ? 1 : 0] = 0L;
     }
 
     private Note restOffNoteFor(long timeStamp, boolean trebleClef) {
-        Note note = new Note((byte) (trebleClef ? 50 : 45),
-                             timeStamp - tempRestRegistry[trebleClef ? 1 : 0]);
-        note.setRest(true);
-        return note;
+        long startTime = tempRestRegistry[trebleClef ? 1 : 0];
+
+        return Note.newRest(startTime, timeStamp - startTime, trebleClef).build();
     }
 
-    private void doNoteOff(Note note) {
-        if (note.timeStamp - currentMeasureStartTime >= fullMeasureLength + margin) {
-            note.setDuration(note.getDuration() - (currentMeasureStartTime + fullMeasureLength
-                    - tempNoteRegistry[note.value]));
-            note.setEndOfTie(!note.isRest);
-            newMeasure(currentMeasureStartTime + fullMeasureLength);
-            doNoteOff(note);
+    private void doNoteOff(long timeStamp, Note note) {
+        if (timeStamp - currentMeasureStartTime >= fullMeasureLength + margin) {
+            long newMeasureTime = currentMeasureStartTime + fullMeasureLength;
+            Note newNote = Note.newNote(newMeasureTime,
+                                        note.durationMillis
+                                                - (newMeasureTime - tempNoteRegistry[note.value]),
+                                        note.value)
+                               .withEndOfTie(!note.isRest)
+                               .build();
+
+            newMeasure(newMeasureTime);
+            doNoteOff(timeStamp, newNote);
         } else {
             fireNoteEvent(note);
         }
@@ -182,9 +188,7 @@ public class MidiParser {
 
         for (int n = 0; n < 255; ++n) {
             if (tempNoteRegistry[n] != 0L) {
-                Note note = noteOffNoteFor(timeStamp, n);
-                note.setStartOfTie(true);
-                fireNoteEvent(note);
+                fireNoteEvent(noteOffNoteFor(timeStamp, n, true));
             }
         }
     }
@@ -201,9 +205,7 @@ public class MidiParser {
             if (tempNoteRegistry[n] != 0L) {
                 tempNoteTieRegistry[n] = true;
                 tempNoteRegistry[n] = timeStamp;
-                Note note = new Note((byte) n, 0L);
-                note.setEndOfTie(true);
-                fireNoteEvent(note);
+                fireNoteEvent(Note.newNote(timeStamp, 0L, n).withEndOfTie(true).build());
             }
         }
     }
@@ -212,6 +214,7 @@ public class MidiParser {
         Note firstNote = note;//TODO
         List<Note> tiedNotes = new ArrayList<>();//TODO
         //TODO - convert the given note into the proper sequence of tied notes
+        //TODO - even for the first one, get the duration, string, dotted, etc, here
 
         fireNoteEvent(firstNote, tiedNotes);
     }

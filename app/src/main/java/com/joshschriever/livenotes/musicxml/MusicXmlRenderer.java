@@ -216,10 +216,10 @@ public class MusicXmlRenderer implements SimpleParserListener {
             elNote.appendChild(elPitch);
         }
 
-        int iXMLDuration = note.duration == 0L
+        int iXMLDuration = note.durationMillis == 0L
                            ? 0
                            : Integers.max(note.isRest ? 0 : 1,
-                                          (int) (note.duration * DIVISIONS_PER_BEAT
+                                          (int) (note.durationMillis * DIVISIONS_PER_BEAT
                                                   * actualBeatsTempo / ONE_MINUTE));
 
         Element elDuration = new Element("duration");
