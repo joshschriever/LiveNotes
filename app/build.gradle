@@ -30,7 +30,6 @@ dependencies {
     compile 'net.sourceforge.streamsupport:streamsupport:1.5.2'
     compile 'com.github.billthefarmer:mididriver:v1.11'
     compile 'jp.kshoji:javax-sound-midi:0.0.3:@aar'
-    compile 'jp.kshoji:jfugue-android:4.0.3:@aar'
     compile project(':seescore')
 
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {

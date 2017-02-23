@@ -2,7 +2,7 @@ package com.joshschriever.livenotes.musicxml;
 
 import android.util.SparseArray;
 
-import org.jfugue.Note;
+import java.util.List;
 
 import java8.lang.Integers;
 import java8.util.Optional;
@@ -18,12 +18,14 @@ import nu.xom.Document;
 import nu.xom.Element;
 import nu.xom.Elements;
 
-// Forked from JFugue
+// Based on JFugue
 public class MusicXmlRenderer implements SimpleParserListener {
 
     private static final int ONE_MINUTE = 60_000;
     private static final int DIVISIONS_PER_BEAT = 4;
 
+    private static final String[] NOTES = new String[]
+            {"C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B"};
     private static final SparseArray<String> BEAT_UNIT_STRINGS = new SparseArray<>(3);
 
     static {
@@ -52,7 +54,7 @@ public class MusicXmlRenderer implements SimpleParserListener {
         Element elID = new Element("identification");
         Element elCreator = new Element("creator");
         elCreator.addAttribute(new Attribute("type", "software"));
-        elCreator.appendChild("Live Notes via JFugue");
+        elCreator.appendChild("Live Notes");
         elID.appendChild(elCreator);
         elRoot.appendChild(elID);
 
@@ -181,27 +183,25 @@ public class MusicXmlRenderer implements SimpleParserListener {
         elPart.appendChild(elCurMeasure);
     }
 
-    //TODO - handle ties
-    //TODO - save timeStamp as an attribute on notes and use it to place tied notes in the correct positions
+    //TODO - handle tiedNotes
+    //TODO - save timeStamp as attribute on notes and use it to put tied notes in correct positions
     //TODO - handle chords - compare timeStamp to timeStamp attributes on notes
+    //TODO --- to mark a chord, insert new Element("chord") as the first child of the note element
     @Override
-    public void noteEvent(Note note, long timeStamp) {
+    public void noteEvent(Note note, List<Note> tiedNotes) {
         doNote(note);
     }
 
     private void doNote(Note note) {
         Element elNote = new Element("note");
-        if (note.hasAccompanyingNotes()) {
-            elNote.appendChild(new Element("chord"));
-        }
 
-        int iAlter = alterForNoteValue(note.getValue());
-        if (note.isRest()) {
+        int iAlter = alterForNoteValue(note.value);
+        if (note.isRest) {
             elNote.appendChild(new Element("rest"));
         } else {
             Element elPitch = new Element("pitch");
             Element elStep = new Element("step");
-            elStep.appendChild(stepForNoteValue(note.getValue()));
+            elStep.appendChild(stepForNoteValue(note.value));
             elPitch.appendChild(elStep);
 
             if (iAlter != 0) {
@@ -211,15 +211,15 @@ public class MusicXmlRenderer implements SimpleParserListener {
             }
 
             Element elOctave = new Element("octave");
-            elOctave.appendChild(octaveForNoteValue(note.getValue()));
+            elOctave.appendChild(octaveForNoteValue(note.value));
             elPitch.appendChild(elOctave);
             elNote.appendChild(elPitch);
         }
 
-        int iXMLDuration = note.getDuration() == 0L
+        int iXMLDuration = note.duration == 0L
                            ? 0
-                           : Integers.max(note.isRest() ? 0 : 1,
-                                          (int) (note.getDuration() * DIVISIONS_PER_BEAT
+                           : Integers.max(note.isRest ? 0 : 1,
+                                          (int) (note.duration * DIVISIONS_PER_BEAT
                                                   * actualBeatsTempo / ONE_MINUTE));
 
         Element elDuration = new Element("duration");
@@ -227,14 +227,14 @@ public class MusicXmlRenderer implements SimpleParserListener {
         elNote.appendChild(elDuration);
 
         boolean bTied = false;
-        if (!note.isRest()) {
-            if (note.isEndOfTie()) {
+        if (!note.isRest) {
+            if (note.isEndOfTie) {
                 Element elTieStop = new Element("tie");
                 elTieStop.addAttribute(new Attribute("type", "stop"));
                 elNote.appendChild(elTieStop);
                 bTied = true;
             }
-            if (note.isStartOfTie()) {
+            if (note.isStartOfTie) {
                 Element elTieStart = new Element("tie");
                 elTieStart.addAttribute(new Attribute("type", "start"));
                 elNote.appendChild(elTieStart);
@@ -255,7 +255,7 @@ public class MusicXmlRenderer implements SimpleParserListener {
             elNote.appendChild(elAccidental);
         }
 
-        int iStaff = note.getValue() >= 48 ? 1 : 2;
+        int iStaff = note.value >= 48 ? 1 : 2;
         Element elStaff = new Element("staff");
         elStaff.appendChild(Integer.toString(iStaff));
         elNote.appendChild(elStaff);
@@ -263,12 +263,12 @@ public class MusicXmlRenderer implements SimpleParserListener {
         if (bTied) {
             Element elNotations = new Element("notations");
 
-            if (note.isEndOfTie()) {
+            if (note.isEndOfTie) {
                 Element elTiedStop = new Element("tied");
                 elTiedStop.addAttribute(new Attribute("type", "stop"));
                 elNotations.appendChild(elTiedStop);
             }
-            if (note.isStartOfTie()) {
+            if (note.isStartOfTie) {
                 Element elTiedStart = new Element("tied");
                 elTiedStart.addAttribute(new Attribute("type", "start"));
                 elNotations.appendChild(elTiedStart);
@@ -277,7 +277,7 @@ public class MusicXmlRenderer implements SimpleParserListener {
             elNote.appendChild(elNotations);
         }
 
-        if (note.isRest()) {
+        if (note.isRest) {
             if (iXMLDuration == 0) {
                 firstNoteThatMatches(restMatches(iStaff, 0))
                         .ifPresentOrElse(elOldNote -> elOldNote.getParent().removeChild(elOldNote),
@@ -291,7 +291,7 @@ public class MusicXmlRenderer implements SimpleParserListener {
             if (iXMLDuration == 0) {
                 elCurMeasure.appendChild(elNote);
             } else {
-                firstNoteThatMatches(noteMatches(note.getValue(), 0))
+                firstNoteThatMatches(noteMatches(note.value, 0))
                         .ifPresent(elOldNote -> elOldNote.getParent()
                                                          .replaceChild(elOldNote, elNote));
             }
@@ -299,11 +299,11 @@ public class MusicXmlRenderer implements SimpleParserListener {
     }
 
     private static String stepForNoteValue(int value) {
-        return Note.NOTES[value % 12].substring(0, 1);
+        return NOTES[value % 12].substring(0, 1);
     }
 
     private static int alterForNoteValue(int value) {
-        String pitch = Note.NOTES[value % 12];
+        String pitch = NOTES[value % 12];
         return pitch.length() > 1 ? pitch.contains("#") ? 1 : -1 : 0;
     }
 

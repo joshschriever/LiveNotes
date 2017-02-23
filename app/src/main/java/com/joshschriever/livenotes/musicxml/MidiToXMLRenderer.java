@@ -1,10 +1,10 @@
 package com.joshschriever.livenotes.musicxml;
 
-import org.jfugue.MidiMessageRecipient;
+import com.joshschriever.livenotes.midi.ShortMessageRecipient;
 
-import jp.kshoji.javax.sound.midi.MidiMessage;
+import jp.kshoji.javax.sound.midi.ShortMessage;
 
-public class MidiToXMLRenderer implements MidiMessageRecipient {
+public class MidiToXMLRenderer implements ShortMessageRecipient {
 
     private Callbacks callbacks;
     private MusicXmlRenderer renderer;
@@ -43,7 +43,7 @@ public class MidiToXMLRenderer implements MidiMessageRecipient {
     }
 
     @Override
-    public void messageReady(MidiMessage midiMessage, long timeStamp) {
+    public void messageReady(ShortMessage midiMessage, long timeStamp) {
         if (ready) {
             if (!recording) {
                 recording = true;
