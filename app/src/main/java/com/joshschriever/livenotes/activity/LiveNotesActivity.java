@@ -269,7 +269,6 @@ public class LiveNotesActivity extends Activity
         midiReceiver = null;
 
         longTapAction = Optional.empty();
-        System.gc();
     }
 
     @Override

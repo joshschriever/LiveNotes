@@ -42,30 +42,54 @@ public class DurationUtil {
         return ((beatsPerMeasure % 3) == 0) && ((beatsPerMeasure / 3) > 1);
     }
 
-    public Pair<Note, List<Note>> getNoteSequenceFromNote(Note originalNote) {
+    public Pair<Note, List<Note>> getNoteSequenceFromNote(final Note originalNote) {
         final int entireDuration = noteDurationForDurationMillis(originalNote.durationMillis,
                                                                  originalNote.isRest);
         int tiedDurationRemaining = noteExtraTiedDurationForDuration(entireDuration);
-        final int baseNoteDuration = entireDuration - tiedDurationRemaining;
+        int noteDuration = entireDuration - tiedDurationRemaining;
 
         Note baseNote = originalNote.newCopy()
-                                    .withDuration(baseNoteDuration)
-                                    .withType(noteStringForDuration(baseNoteDuration))
-                                    .withDotted(noteDottedForDuration(baseNoteDuration))
-                                    //.withStartOfTie(tiedDurationRemaining > 0)//TODO
+                                    .withDuration(noteDuration)
+                                    .withType(noteStringForDuration(noteDuration))
+                                    .withDotted(noteDottedForDuration(noteDuration))
+                                    .withStartOfTie(tiedDurationRemaining > 0
+                                                            && !originalNote.isRest)
                                     .build();
 
-        List<Note> tiedNotes = new ArrayList<>();//TODO
+        List<Note> tiedNotes = new ArrayList<>();
+        long timeStamp = originalNote.timeStamp;
+
+        while (tiedDurationRemaining > 0) {
+            int newTiedDurationRemaining = noteExtraTiedDurationForDuration(tiedDurationRemaining);
+            noteDuration = tiedDurationRemaining - newTiedDurationRemaining;
+            tiedDurationRemaining = newTiedDurationRemaining;
+            timeStamp += durationMillisForNoteDuration(noteDuration);
+
+            tiedNotes.add(originalNote.copyWithNewTimeStamp(timeStamp)
+                                      .withDuration(noteDuration)
+                                      .withType(noteStringForDuration(noteDuration))
+                                      .withDotted(noteDottedForDuration(noteDuration))
+                                      .withEndOfTie(!originalNote.isRest)
+                                      .withStartOfTie(tiedDurationRemaining > 0
+                                                              && !originalNote.isRest)
+                                      .build());
+        }
 
         return Pair.create(baseNote, tiedNotes);
     }
 
     private int noteDurationForDurationMillis(long durationMillis, boolean isRest) {
-        return (durationMillis == 0L ? 0
-                                     : Integers.max(isRest ? 0 : 1,
-                                                    (int) (durationMillis * DIVISIONS_PER_BEAT
-                                                            * actualBeatsTempo / ONE_MINUTE)))
-                * MAX_BEAT_TYPE / beatType;
+        return adjustDurationForPrecision(
+                (durationMillis == 0L ? 0
+                                      : Integers.max(isRest ? 0 : 1,
+                                                     (int) (durationMillis * DIVISIONS_PER_BEAT
+                                                             * actualBeatsTempo / ONE_MINUTE)))
+                        * MAX_BEAT_TYPE / beatType);
+    }
+
+    private int durationMillisForNoteDuration(int duration) {
+        return adjustDurationForPrecision(duration) * ONE_MINUTE / actualBeatsTempo
+                * beatType / MAX_BEAT_TYPE / DIVISIONS_PER_BEAT;
     }
 
     private String noteStringForDuration(int duration) {
@@ -77,7 +101,7 @@ public class DurationUtil {
     }
 
     private int noteExtraTiedDurationForDuration(int duration) {
-        return noteExtraTiedDuration(duration);
+        return noteExtraTiedDuration(adjustDurationForPrecision(duration));
     }
 
     private int adjustDurationForPrecision(int duration) {

@@ -33,6 +33,10 @@ public class Note {
     public final boolean isDotted;
 
     public Builder newCopy() {
+        return copyWithNewTimeStamp(timeStamp);
+    }
+
+    public Builder copyWithNewTimeStamp(long timeStamp) {
         return new Builder(timeStamp, durationMillis, value, isRest)
                 .withDuration(duration)
                 .withEndOfTie(isEndOfTie)

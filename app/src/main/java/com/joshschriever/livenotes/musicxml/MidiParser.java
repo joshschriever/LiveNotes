@@ -86,12 +86,12 @@ public class MidiParser {
     }
 
     private void noteOnEvent(long timeStamp, int noteValue) {
+        newMeasureIfNeededForNoteOn(timeStamp);
+
         boolean trebleClef = noteValue >= 48;
         if (tempRestRegistry[trebleClef ? 1 : 0] != 0L) {
             restOffEvent(timeStamp, trebleClef);
         }
-
-        newMeasureIfNeededForNoteOn(timeStamp);
 
         tempNoteRegistry[noteValue] = timeStamp;
         fireNoteEvent(Note.newNote(timeStamp, 0L, noteValue).build());
@@ -147,7 +147,7 @@ public class MidiParser {
                                         note.durationMillis
                                                 - (newMeasureTime - tempNoteRegistry[note.value]),
                                         note.value)
-                               .withEndOfTie(!note.isRest)
+                               .withEndOfTie(true)
                                .build();
 
             newMeasure(newMeasureTime);
@@ -158,7 +158,7 @@ public class MidiParser {
     }
 
     private void newMeasureIfNeededForNoteOn(long timeStamp) {
-        if (timeStamp - currentMeasureStartTime + margin >= fullMeasureLength) {
+        while (timeStamp - currentMeasureStartTime + margin >= fullMeasureLength) {
             newMeasure(currentMeasureStartTime + fullMeasureLength);
         }
     }
