@@ -15,8 +15,11 @@ public class MidiToXMLRenderer implements ShortMessageRecipient {
 
     public MidiToXMLRenderer(Callbacks callbacks, int beats, int beatValue, int tempo) {
         this.callbacks = callbacks;
-        renderer = new MusicXmlRenderer(beats, beatValue, tempo);
-        parser = new MidiParser(beats, beatValue, tempo);
+
+        DurationUtil durationUtil = new DurationUtil(beats, beatValue, tempo);
+        renderer = new MusicXmlRenderer(durationUtil, beats, beatValue, tempo);
+
+        parser = new MidiParser(durationUtil);
         parser.addParserListener(renderer);
     }
 

@@ -13,10 +13,10 @@ public class DurationUtil {
     private static final int MAX_BEAT_TYPE = 8;
     public static final int DIVISIONS_PER_BEAT = 4;
 
-    private int beatsPerMeasure;
-    private int beatType;
-    private int markedTempo;
-    private int actualBeatsTempo;
+    private final int beatsPerMeasure;
+    private final int beatType;
+    private final int markedTempo;
+    private final int actualBeatsTempo;
 
     public DurationUtil(int beatsPerMeasure, int beatType, int tempo) {
         this.beatsPerMeasure = beatsPerMeasure;
@@ -34,11 +34,7 @@ public class DurationUtil {
         return beatsPerMeasure * ONE_MINUTE / markedTempo / (isTimeSignatureCompound() ? 3 : 1);
     }
 
-    private boolean isTimeSignatureCompound() {
-        return isTimeSignatureCompound(beatsPerMeasure);
-    }
-
-    public static boolean isTimeSignatureCompound(int beatsPerMeasure) {
+    public boolean isTimeSignatureCompound() {
         return ((beatsPerMeasure % 3) == 0) && ((beatsPerMeasure / 3) > 1);
     }
 
@@ -52,8 +48,9 @@ public class DurationUtil {
                                     .withDuration(noteDuration)
                                     .withType(noteStringForDuration(noteDuration))
                                     .withDotted(noteDottedForDuration(noteDuration))
-                                    .withStartOfTie(tiedDurationRemaining > 0
-                                                            && !originalNote.isRest)
+                                    .withStartOfTie(originalNote.isStartOfTie
+                                                            || (tiedDurationRemaining > 0
+                                            && !originalNote.isRest))
                                     .build();
 
         List<Note> tiedNotes = new ArrayList<>();
@@ -70,8 +67,9 @@ public class DurationUtil {
                                       .withType(noteStringForDuration(noteDuration))
                                       .withDotted(noteDottedForDuration(noteDuration))
                                       .withEndOfTie(!originalNote.isRest)
-                                      .withStartOfTie(tiedDurationRemaining > 0
-                                                              && !originalNote.isRest)
+                                      .withStartOfTie(originalNote.isStartOfTie
+                                                              || (tiedDurationRemaining > 0
+                                              && !originalNote.isRest))
                                       .build());
         }
 

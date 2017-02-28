@@ -35,11 +35,19 @@ public class MusicXmlRenderer implements SimpleParserListener {
     private Element elPart;
     private Element elCurMeasure;
 
-    private int beatsPerMeasure;
-    private int beatType;
-    private int tempo;
+    private final DurationUtil durationUtil;
+    private final long margin;
 
-    public MusicXmlRenderer(int beatsPerMeasure, int beatType, int tempo) {
+    private final int beatsPerMeasure;
+    private final int beatType;
+    private final int tempo;
+
+    public MusicXmlRenderer(DurationUtil durationUtil,
+                            int beatsPerMeasure,
+                            int beatType,
+                            int tempo) {
+        this.durationUtil = durationUtil;
+        margin = durationUtil.shortestNoteLengthInMillis();
         this.beatsPerMeasure = beatsPerMeasure;
         this.beatType = beatType;
         this.tempo = tempo;
@@ -62,10 +70,12 @@ public class MusicXmlRenderer implements SimpleParserListener {
         doFirstMeasure();
     }
 
-    //TODO - remove all occurrences of timeStamp attribute
     public String getMusicXMLString() {
-        return document.toXML().replaceAll("<duration>0</duration>",
-                                           "<duration>1</duration>");
+        return document.toXML()
+                       .replaceAll("<note timeStamp=\"[0-9]+\">",
+                                   "<note>")
+                       .replaceAll("<duration>0</duration>",
+                                   "<duration>1</duration>");
     }
 
     public void removeTrailingEmptyMeasures() {
@@ -131,7 +141,7 @@ public class MusicXmlRenderer implements SimpleParserListener {
             Element elBeatUnit = new Element("beat-unit");
             elBeatUnit.appendChild(getBeatUnitString());
             elMetronome.appendChild(elBeatUnit);
-            if (DurationUtil.isTimeSignatureCompound(beatsPerMeasure)) {
+            if (durationUtil.isTimeSignatureCompound()) {
                 elMetronome.appendChild(new Element("beat-unit-dot"));
             }
 
@@ -160,8 +170,7 @@ public class MusicXmlRenderer implements SimpleParserListener {
     }
 
     private String getBeatUnitString() {
-        return BEAT_UNIT_STRINGS.get(
-                beatType / (DurationUtil.isTimeSignatureCompound(beatsPerMeasure) ? 2 : 1));
+        return BEAT_UNIT_STRINGS.get(beatType / (durationUtil.isTimeSignatureCompound() ? 2 : 1));
     }
 
     @Override
@@ -174,17 +183,54 @@ public class MusicXmlRenderer implements SimpleParserListener {
         elPart.appendChild(elCurMeasure);
     }
 
-    //TODO - handle tiedNotes
-    //TODO - save timeStamp as attribute on notes and use it to put tied notes in correct positions
-    //TODO - handle chords - compare timeStamp to timeStamp attributes on notes
+    //TODO - handle chords - compare timeStamp to timeStamp attributes on notes in measure
     //TODO --- to mark a chord, insert new Element("chord") as the first child of the note element
     @Override
     public void noteEvent(Note baseNote, List<Note> tiedNotes) {
-        doNote(baseNote);
+        Element elNote = elementForNote(baseNote);
+        insertNote(elNote, baseNote);
+
+        Element measure = ((Element) elNote.getParent());
+        if (measure == null) {
+            return;
+        }
+
+        StreamSupport.stream(tiedNotes)
+                     .forEach(tiedNote -> stream(measure.getChildElements("note"))
+                             .dropWhile(note -> timeStampOf(note) < tiedNote.timeStamp)
+                             .findFirst()
+                             .ifPresentOrElse(note -> measure.insertChild(elementForNote(tiedNote),
+                                                                          measure.indexOf(note)),
+                                              () -> measure.appendChild(elementForNote(tiedNote))));
     }
 
-    private void doNote(Note note) {
+    private void insertNote(Element elNote, Note note) {
+        int iStaff = note.value >= 48 ? 1 : 2;
+
+        if (note.isRest) {
+            if (note.duration == 0) {
+                firstNoteThatMatches(restMatches(iStaff, 0))
+                        .ifPresentOrElse(elOldNote -> elOldNote.getParent().removeChild(elOldNote),
+                                         () -> elCurMeasure.appendChild(elNote));
+            } else {
+                firstNoteThatMatches(restMatches(iStaff, 0))
+                        .ifPresent(elOldNote -> elOldNote.getParent()
+                                                         .replaceChild(elOldNote, elNote));
+            }
+        } else {
+            if (note.duration == 0) {
+                elCurMeasure.appendChild(elNote);
+            } else {
+                firstNoteThatMatches(noteMatches(note.value, 0))
+                        .ifPresent(elOldNote -> elOldNote.getParent()
+                                                         .replaceChild(elOldNote, elNote));
+            }
+        }
+    }
+
+    private Element elementForNote(Note note) {
         Element elNote = new Element("note");
+        elNote.addAttribute(new Attribute("timeStamp", Long.toString(note.timeStamp)));
 
         int iAlter = alterForNoteValue(note.value);
         if (note.isRest) {
@@ -262,25 +308,7 @@ public class MusicXmlRenderer implements SimpleParserListener {
             elNote.appendChild(elNotations);
         }
 
-        if (note.isRest) {
-            if (note.duration == 0) {
-                firstNoteThatMatches(restMatches(iStaff, 0))
-                        .ifPresentOrElse(elOldNote -> elOldNote.getParent().removeChild(elOldNote),
-                                         () -> elCurMeasure.appendChild(elNote));
-            } else {
-                firstNoteThatMatches(restMatches(iStaff, 0))
-                        .ifPresent(elOldNote -> elOldNote.getParent()
-                                                         .replaceChild(elOldNote, elNote));
-            }
-        } else {
-            if (note.duration == 0) {
-                elCurMeasure.appendChild(elNote);
-            } else {
-                firstNoteThatMatches(noteMatches(note.value, 0))
-                        .ifPresent(elOldNote -> elOldNote.getParent()
-                                                         .replaceChild(elOldNote, elNote));
-            }
-        }
+        return elNote;
     }
 
     private static String stepForNoteValue(int value) {
@@ -294,6 +322,10 @@ public class MusicXmlRenderer implements SimpleParserListener {
 
     private static String octaveForNoteValue(int value) {
         return Integer.toString(value / 12);
+    }
+
+    private long timeStampOf(Element noteElement) {
+        return Long.parseLong(noteElement.getAttributeValue("timeStamp"));
     }
 
     private static Predicate<Element> restMatches(int staff, int duration) {

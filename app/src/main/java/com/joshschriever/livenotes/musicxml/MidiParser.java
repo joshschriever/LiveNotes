@@ -20,13 +20,13 @@ public class MidiParser {
     private long[] tempRestRegistry = new long[] {0L, 0L};
     private boolean[] tempNoteTieRegistry = new boolean[255];
 
-    private DurationUtil durationUtil;
+    private final DurationUtil durationUtil;
     private final long margin;
     private final long fullMeasureLength;
     private long currentMeasureStartTime;
 
-    public MidiParser(int beatsPerMeasure, int beatType, int tempo) {
-        durationUtil = new DurationUtil(beatsPerMeasure, beatType, tempo);
+    public MidiParser(DurationUtil durationUtil) {
+        this.durationUtil = durationUtil;
         margin = durationUtil.shortestNoteLengthInMillis();
         fullMeasureLength = durationUtil.measureLengthInMillis();
 
