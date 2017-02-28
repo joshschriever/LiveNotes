@@ -78,14 +78,6 @@ public class MusicXmlRenderer implements SimpleParserListener {
                                    "<duration>1</duration>");
     }
 
-    public void removeTrailingEmptyMeasures() {
-        streamInReverse(allMeasures())
-                .takeWhile(elMeasure -> elMeasure.getChildCount() == 0
-                        || stream(elMeasure.getChildElements("note"))
-                        .allMatch(elNote -> elNote.getFirstChildElement("rest") != null))
-                .forEach(elMeasure -> elPart.removeChild(elMeasure));
-    }
-
     private void doFirstMeasure() {
         if (elPart == null) {
             Element elScorePart = new Element("score-part");
@@ -184,14 +176,12 @@ public class MusicXmlRenderer implements SimpleParserListener {
         elPart.appendChild(elCurMeasure);
     }
 
-    //TODO - handle chords - compare timeStamp to timeStamp attributes on notes in measure
-    //TODO --- to mark a chord, insert new Element("chord") as the first child of the note element
     @Override
     public void noteEvent(Note baseNote, List<Note> tiedNotes) {
         Element elNote = elementForNote(baseNote);
         insertNote(elNote, baseNote);
 
-        Element measure = ((Element) elNote.getParent());
+        Element measure = (Element) elNote.getParent();
         if (measure == null) {
             return;
         }
@@ -203,29 +193,23 @@ public class MusicXmlRenderer implements SimpleParserListener {
                              .ifPresentOrElse(note -> measure.insertChild(elementForNote(tiedNote),
                                                                           measure.indexOf(note)),
                                               () -> measure.appendChild(elementForNote(tiedNote))));
+
+        //TODO - handle chords - compare timeStamp to timeStamp attributes on notes in measure
+        //TODO --- to mark chord, insert new Element("chord") as the first child of the note element
     }
 
     private void insertNote(Element elNote, Note note) {
-        int iStaff = note.value >= 48 ? 1 : 2;
+        Predicate<Element> matcher = note.isRest ? restMatches(note.value >= 48 ? 1 : 2, 0)
+                                                 : noteMatches(note.value, 0);
 
-        if (note.isRest) {
-            if (note.duration == 0) {
-                firstNoteThatMatches(restMatches(iStaff, 0))
-                        .ifPresentOrElse(elOldNote -> elOldNote.getParent().removeChild(elOldNote),
-                                         () -> elCurMeasure.appendChild(elNote));
-            } else {
-                firstNoteThatMatches(restMatches(iStaff, 0))
-                        .ifPresent(elOldNote -> elOldNote.getParent()
-                                                         .replaceChild(elOldNote, elNote));
-            }
+        if (note.duration == 0) {
+            firstNoteThatMatches(matcher)
+                    .ifPresentOrElse(elOldNote -> elOldNote.getParent().removeChild(elOldNote),
+                                     () -> elCurMeasure.appendChild(elNote));
         } else {
-            if (note.duration == 0) {
-                elCurMeasure.appendChild(elNote);
-            } else {
-                firstNoteThatMatches(noteMatches(note.value, 0))
-                        .ifPresent(elOldNote -> elOldNote.getParent()
-                                                         .replaceChild(elOldNote, elNote));
-            }
+            firstNoteThatMatches(matcher)
+                    .ifPresent(elOldNote -> elOldNote.getParent()
+                                                     .replaceChild(elOldNote, elNote));
         }
     }
 
@@ -370,16 +354,12 @@ public class MusicXmlRenderer implements SimpleParserListener {
         return StreamSupport.stream(new ElementsSpliterator(elements), false);
     }
 
-    private static Stream<Element> streamInReverse(Elements elements) {
-        return StreamSupport.stream(new ReverseElementsSpliterator(elements), false);
-    }
-
     private static class ElementsSpliterator extends AbstractSpliterator<Element> {
 
-        Elements elements;
-        int current;
+        private Elements elements;
+        private int current;
 
-        ElementsSpliterator(Elements elements) {
+        private ElementsSpliterator(Elements elements) {
             super(elements.size(), Spliterator.ORDERED | Spliterator.SIZED | Spliterator.IMMUTABLE);
             this.elements = elements;
             current = 0;
@@ -390,25 +370,6 @@ public class MusicXmlRenderer implements SimpleParserListener {
             if (current < elements.size()) {
                 action.accept(elements.get(current));
                 current++;
-                return true;
-            } else {
-                return false;
-            }
-        }
-    }
-
-    private static class ReverseElementsSpliterator extends ElementsSpliterator {
-
-        private ReverseElementsSpliterator(Elements elements) {
-            super(elements);
-            current = elements.size() - 1;
-        }
-
-        @Override
-        public boolean tryAdvance(Consumer<? super Element> action) {
-            if (current >= 0) {
-                action.accept(elements.get(current));
-                current--;
                 return true;
             } else {
                 return false;

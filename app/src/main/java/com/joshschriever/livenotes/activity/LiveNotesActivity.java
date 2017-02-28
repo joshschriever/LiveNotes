@@ -138,6 +138,7 @@ public class LiveNotesActivity extends Activity
     @Override
     public void onXMLUpdated() {
         setScoreXML(midiToXMLRenderer.getXML());
+        //TODO - scroll to bottom
     }
 
     private void setScoreXML(String newXML) {

@@ -17,17 +17,19 @@ public class DurationHandler {
     private final int beatType;
     private final int markedTempo;
     private final int actualBeatsTempo;
+    private final int precision;
 
     public DurationHandler(int beatsPerMeasure, int beatType, int tempo) {
         this.beatsPerMeasure = beatsPerMeasure;
         this.beatType = beatType;
         markedTempo = tempo;
         actualBeatsTempo = markedTempo * (isTimeSignatureCompound() ? 3 : 1);
+        precision = 4;//TODO - precision options: 1, 2, 4, 8 - Minimum: MAX_BEAT_TYPE / beatType
     }
 
+    //Note - this is the absolute shortest note, not accounting for the precision level
     public long shortestNoteLengthInMillis() {
-        return ONE_MINUTE / markedTempo / (isTimeSignatureCompound() ? 3 : 1)
-                / DIVISIONS_PER_BEAT; //TODO - adjust for precision
+        return ONE_MINUTE / markedTempo / (isTimeSignatureCompound() ? 3 : 1) / DIVISIONS_PER_BEAT;
     }
 
     public long measureLengthInMillis() {
@@ -107,8 +109,11 @@ public class DurationHandler {
     }
 
     private int adjustDurationForPrecision(int duration) {
-        //TODO - default precision needs to be lower
-        return duration;
+        final int remainder = duration % precision;
+        final int lower = duration - remainder;
+        final int higher = lower + precision;
+
+        return Math.abs(duration - lower) <= Math.abs(duration - higher) ? lower : higher;
     }
 
     private static String noteString(int duration) {

@@ -30,7 +30,7 @@ public class MidiParser {
         margin = durationHandler.shortestNoteLengthInMillis();
         fullMeasureLength = durationHandler.measureLengthInMillis();
 
-        for (int n = 0; n < 255; ++n) {
+        for (int n = 0; n < 255; n++) {
             tempNoteRegistry[n] = 0L;
             tempNoteTieRegistry[n] = false;
         }
@@ -59,18 +59,17 @@ public class MidiParser {
     public void stop() {
         long timeStamp = System.currentTimeMillis();
 
-        if (tempRestRegistry[0] != 0L) {
-            restOffEvent(timeStamp, false);
-        }
-        if (tempRestRegistry[1] != 0L) {
-            restOffEvent(timeStamp, true);
-        }
-
-        for (int n = 0; n < 255; ++n) {
+        for (int n = 0; n < 255; n++) {
             if (tempNoteRegistry[n] != 0L) {
                 noteOffEvent(timeStamp, n);
             }
         }
+
+        fireNoteEvent(restOffNoteFor(currentMeasureStartTime + fullMeasureLength, false));
+        fireNoteEvent(restOffNoteFor(currentMeasureStartTime + fullMeasureLength, true));
+
+        tempRestRegistry[0] = 0L;
+        tempRestRegistry[1] = 0L;
     }
 
     public void parse(ShortMessage message) {
@@ -178,7 +177,7 @@ public class MidiParser {
             fireNoteEvent(restOffNoteFor(timeStamp, true));
         }
 
-        for (int n = 0; n < 255; ++n) {
+        for (int n = 0; n < 255; n++) {
             if (tempNoteRegistry[n] != 0L) {
                 fireNoteEvent(noteOffNoteFor(timeStamp, n, true));
             }
@@ -193,7 +192,7 @@ public class MidiParser {
             restOnEvent(timeStamp, true);
         }
 
-        for (int n = 0; n < 255; ++n) {
+        for (int n = 0; n < 255; n++) {
             if (tempNoteRegistry[n] != 0L) {
                 tempNoteTieRegistry[n] = true;
                 tempNoteRegistry[n] = timeStamp;
