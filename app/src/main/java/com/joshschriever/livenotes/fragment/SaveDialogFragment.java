@@ -10,7 +10,6 @@ import com.joshschriever.livenotes.R;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
-import java.util.TimeZone;
 
 public class SaveDialogFragment extends DialogFragment {
 
@@ -24,7 +23,7 @@ public class SaveDialogFragment extends DialogFragment {
     public SaveDialogFragment(Callbacks callbacks) {
         this.callbacks = callbacks;
         filename = "Composition_" + new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss", Locale.US)
-                .format(Calendar.getInstance(TimeZone.getDefault()).getTime()) + ".xml";
+                .format(Calendar.getInstance().getTime()) + ".xml";
     }
 
     @Override

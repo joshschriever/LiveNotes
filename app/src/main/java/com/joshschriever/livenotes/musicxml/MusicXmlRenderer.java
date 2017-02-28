@@ -35,19 +35,19 @@ public class MusicXmlRenderer implements SimpleParserListener {
     private Element elPart;
     private Element elCurMeasure;
 
-    private final DurationUtil durationUtil;
+    private final DurationHandler durationHandler;
     private final long margin;
 
     private final int beatsPerMeasure;
     private final int beatType;
     private final int tempo;
 
-    public MusicXmlRenderer(DurationUtil durationUtil,
+    public MusicXmlRenderer(DurationHandler durationHandler,
                             int beatsPerMeasure,
                             int beatType,
                             int tempo) {
-        this.durationUtil = durationUtil;
-        margin = durationUtil.shortestNoteLengthInMillis();
+        this.durationHandler = durationHandler;
+        margin = durationHandler.shortestNoteLengthInMillis();
         this.beatsPerMeasure = beatsPerMeasure;
         this.beatType = beatType;
         this.tempo = tempo;
@@ -104,7 +104,7 @@ public class MusicXmlRenderer implements SimpleParserListener {
 
             Element elAttributes = new Element("attributes");
             Element elDivisions = new Element("divisions");
-            elDivisions.appendChild(Integer.toString(DurationUtil.DIVISIONS_PER_BEAT));
+            elDivisions.appendChild(Integer.toString(DurationHandler.DIVISIONS_PER_BEAT));
             elAttributes.appendChild(elDivisions);
 
             Element elKey = new Element("key");
@@ -141,7 +141,7 @@ public class MusicXmlRenderer implements SimpleParserListener {
             Element elBeatUnit = new Element("beat-unit");
             elBeatUnit.appendChild(getBeatUnitString());
             elMetronome.appendChild(elBeatUnit);
-            if (durationUtil.isTimeSignatureCompound()) {
+            if (durationHandler.isTimeSignatureCompound()) {
                 elMetronome.appendChild(new Element("beat-unit-dot"));
             }
 
@@ -170,7 +170,8 @@ public class MusicXmlRenderer implements SimpleParserListener {
     }
 
     private String getBeatUnitString() {
-        return BEAT_UNIT_STRINGS.get(beatType / (durationUtil.isTimeSignatureCompound() ? 2 : 1));
+        return BEAT_UNIT_STRINGS.get(
+                beatType / (durationHandler.isTimeSignatureCompound() ? 2 : 1));
     }
 
     @Override

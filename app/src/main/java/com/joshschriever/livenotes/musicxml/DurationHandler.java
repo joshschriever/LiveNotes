@@ -7,7 +7,7 @@ import java.util.List;
 
 import java8.lang.Integers;
 
-public class DurationUtil {
+public class DurationHandler {
 
     private static final int ONE_MINUTE = 60_000;
     private static final int MAX_BEAT_TYPE = 8;
@@ -18,7 +18,7 @@ public class DurationUtil {
     private final int markedTempo;
     private final int actualBeatsTempo;
 
-    public DurationUtil(int beatsPerMeasure, int beatType, int tempo) {
+    public DurationHandler(int beatsPerMeasure, int beatType, int tempo) {
         this.beatsPerMeasure = beatsPerMeasure;
         this.beatType = beatType;
         markedTempo = tempo;
@@ -55,12 +55,13 @@ public class DurationUtil {
 
         List<Note> tiedNotes = new ArrayList<>();
         long timeStamp = originalNote.timeStamp;
+        int newTiedDurationRemaining;
 
         while (tiedDurationRemaining > 0) {
-            int newTiedDurationRemaining = noteExtraTiedDurationForDuration(tiedDurationRemaining);
+            timeStamp += durationMillisForNoteDuration(noteDuration);
+            newTiedDurationRemaining = noteExtraTiedDurationForDuration(tiedDurationRemaining);
             noteDuration = tiedDurationRemaining - newTiedDurationRemaining;
             tiedDurationRemaining = newTiedDurationRemaining;
-            timeStamp += durationMillisForNoteDuration(noteDuration);
 
             tiedNotes.add(originalNote.copyWithNewTimeStamp(timeStamp)
                                       .withDuration(noteDuration)
@@ -80,8 +81,11 @@ public class DurationUtil {
         return adjustDurationForPrecision(
                 (durationMillis == 0L ? 0
                                       : Integers.max(isRest ? 0 : 1,
-                                                     (int) (durationMillis * DIVISIONS_PER_BEAT
-                                                             * actualBeatsTempo / ONE_MINUTE)))
+                                                     Math.round((float) (
+                                                             (double) (durationMillis
+                                                                     * DIVISIONS_PER_BEAT
+                                                                     * actualBeatsTempo)
+                                                                     / ONE_MINUTE))))
                         * MAX_BEAT_TYPE / beatType);
     }
 

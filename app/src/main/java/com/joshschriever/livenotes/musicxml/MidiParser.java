@@ -20,15 +20,15 @@ public class MidiParser {
     private long[] tempRestRegistry = new long[] {0L, 0L};
     private boolean[] tempNoteTieRegistry = new boolean[255];
 
-    private final DurationUtil durationUtil;
+    private final DurationHandler durationHandler;
     private final long margin;
     private final long fullMeasureLength;
     private long currentMeasureStartTime;
 
-    public MidiParser(DurationUtil durationUtil) {
-        this.durationUtil = durationUtil;
-        margin = durationUtil.shortestNoteLengthInMillis();
-        fullMeasureLength = durationUtil.measureLengthInMillis();
+    public MidiParser(DurationHandler durationHandler) {
+        this.durationHandler = durationHandler;
+        margin = durationHandler.shortestNoteLengthInMillis();
+        fullMeasureLength = durationHandler.measureLengthInMillis();
 
         for (int n = 0; n < 255; ++n) {
             tempNoteRegistry[n] = 0L;
@@ -203,7 +203,7 @@ public class MidiParser {
     }
 
     private void fireNoteEvent(Note note) {
-        Pair<Note, List<Note>> pair = durationUtil.getNoteSequenceFromNote(note);
+        Pair<Note, List<Note>> pair = durationHandler.getNoteSequenceFromNote(note);
         stream(listeners).forEach(listener -> listener.noteEvent(pair.first, pair.second));
     }
 
