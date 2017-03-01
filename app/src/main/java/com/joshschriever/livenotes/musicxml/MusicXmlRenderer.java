@@ -10,12 +10,19 @@ import java8.util.Spliterators.AbstractSpliterator;
 import java8.util.function.Consumer;
 import java8.util.function.Predicate;
 import java8.util.stream.Stream;
-import java8.util.stream.StreamSupport;
 import nu.xom.Attribute;
 import nu.xom.DocType;
 import nu.xom.Document;
 import nu.xom.Element;
 import nu.xom.Elements;
+
+import static java.util.Collections.reverseOrder;
+import static java8.util.Comparators.comparingInt;
+import static java8.util.function.Predicates.negate;
+import static java8.util.stream.Collectors.toList;
+import static java8.util.stream.StreamSupport.stream;
+
+//TODO - key signature handler
 
 // Based on JFugue
 public class MusicXmlRenderer implements SimpleParserListener {
@@ -186,16 +193,17 @@ public class MusicXmlRenderer implements SimpleParserListener {
             return;
         }
 
-        StreamSupport.stream(tiedNotes)
-                     .forEach(tiedNote -> stream(measure.getChildElements("note"))
-                             .dropWhile(note -> timeStampOf(note) < tiedNote.timeStamp)
-                             .findFirst()
-                             .ifPresentOrElse(note -> measure.insertChild(elementForNote(tiedNote),
-                                                                          measure.indexOf(note)),
-                                              () -> measure.appendChild(elementForNote(tiedNote))));
+        stream(tiedNotes).forEachOrdered(
+                tiedNote ->
+                        streamElements(measure.getChildElements("note"))
+                                .dropWhile(note -> timeStampOf(note) < tiedNote.timeStamp)
+                                .findFirst()
+                                .ifPresentOrElse(
+                                        note -> measure.insertChild(elementForNote(tiedNote),
+                                                                    measure.indexOf(note)),
+                                        () -> measure.appendChild(elementForNote(tiedNote))));
 
-        //TODO - handle chords - compare timeStamp to timeStamp attributes on notes in measure
-        //TODO --- to mark chord, insert new Element("chord") as the first child of the note element
+        reCalculateChords(measure);
     }
 
     private void insertNote(Element elNote, Note note) {
@@ -208,8 +216,7 @@ public class MusicXmlRenderer implements SimpleParserListener {
                                      () -> elCurMeasure.appendChild(elNote));
         } else {
             firstNoteThatMatches(matcher)
-                    .ifPresent(elOldNote -> elOldNote.getParent()
-                                                     .replaceChild(elOldNote, elNote));
+                    .ifPresent(elOldNote -> elOldNote.getParent().replaceChild(elOldNote, elNote));
         }
     }
 
@@ -309,9 +316,86 @@ public class MusicXmlRenderer implements SimpleParserListener {
         return Integer.toString(value / 12);
     }
 
-    private long timeStampOf(Element noteElement) {
+    private void reCalculateChords(Element measure) {
+        streamElements(measure.getChildElements("backup"))
+                .forEach(measure::removeChild);
+        streamNotesInMeasure(measure)
+                .forEach(note -> Optional.ofNullable(note.getFirstChildElement("chord"))
+                                         .ifPresent(note::removeChild));
+
+        streamNotesInMeasure(measure)
+                .forEachOrdered(currentNote -> {
+                    if (notMarkedAsChord(currentNote)) {
+                        final int index = measure.indexOf(currentNote);
+
+                        final List<Element> concurrentNotes = streamNotesInMeasure(measure)
+                                .dropWhile(note -> note != currentNote)
+                                .takeWhile(withinMarginOf(timeStampOf(currentNote)))
+                                .takeWhile(MusicXmlRenderer::notMarkedAsChord)
+                                .collect(toList());
+
+                        if (concurrentNotes.size() == 1) {
+                            return;
+                        }
+
+                        stream(concurrentNotes).forEach(measure::removeChild);
+
+                        final List<Element> nonRests =
+                                stream(concurrentNotes).filter(negate(isRest)).collect(toList());
+                        stream(nonRests)
+                                .sorted(reverseOrder(comparingInt(MusicXmlRenderer::durationOf)))
+                                .skip(1)
+                                .forEach(note -> note.insertChild(new Element("chord"), 0));
+                        stream(nonRests)
+                                .sorted(comparingInt(MusicXmlRenderer::durationOf))
+                                .forEachOrdered(note -> measure.insertChild(note, index));
+
+                        final List<Element> rests =
+                                stream(concurrentNotes).filter(isRest).collect(toList());
+                        stream(rests).findFirst().ifPresent(rest -> {
+                            if (nonRests.size() > 0) {
+                                measure.insertChild(backupForDuration(durationOf(rest)), index);
+                            }
+                            measure.insertChild(rest, index);
+                        });
+                        stream(rests).skip(1).forEachOrdered(rest -> {
+                            measure.insertChild(backupForDuration(durationOf(rest)), index);
+                            measure.insertChild(rest, index);
+                        });
+                    }
+                });
+    }
+
+    private static Stream<Element> streamNotesInMeasure(Element measure) {
+        return streamElements(measure.getChildElements("note"));
+    }
+
+    private Element backupForDuration(int duration) {
+        Element elBackup = new Element("backup");
+        Element elDuration = new Element("duration");
+        elDuration.appendChild(Integer.toString(duration));
+        elBackup.appendChild(elDuration);
+        return elBackup;
+    }
+
+    private static int durationOf(Element noteElement) {
+        return Integer.parseInt(noteElement.getFirstChildElement("duration").getValue());
+    }
+
+    private static long timeStampOf(Element noteElement) {
         return Long.parseLong(noteElement.getAttributeValue("timeStamp"));
     }
+
+    private Predicate<Element> withinMarginOf(long timeStamp) {
+        return noteElement -> Math.abs(timeStamp - timeStampOf(noteElement)) < margin;
+    }
+
+    private static boolean notMarkedAsChord(Element noteElement) {
+        return noteElement.getFirstChildElement("chord") == null;
+    }
+
+    private static Predicate<Element> isRest =
+            noteElement -> noteElement.getFirstChildElement("rest") != null;
 
     private static Predicate<Element> restMatches(int staff, int duration) {
         return elNote -> elNote.getFirstChildElement("rest") != null
@@ -342,16 +426,17 @@ public class MusicXmlRenderer implements SimpleParserListener {
     }
 
     private Optional<Element> firstNoteThatMatches(Predicate<Element> predicate) {
-        return stream(allMeasures()).flatMap(measure -> stream(measure.getChildElements("note")))
-                                    .filter(predicate).findFirst();
+        return streamElements(allMeasures())
+                .flatMap(measure -> streamElements(measure.getChildElements("note")))
+                .filter(predicate).findFirst();
     }
 
     private Elements allMeasures() {
         return elPart.getChildElements("measure");
     }
 
-    private static Stream<Element> stream(Elements elements) {
-        return StreamSupport.stream(new ElementsSpliterator(elements), false);
+    private static Stream<Element> streamElements(Elements elements) {
+        return stream(new ElementsSpliterator(elements), false);
     }
 
     private static class ElementsSpliterator extends AbstractSpliterator<Element> {
