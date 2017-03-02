@@ -16,7 +16,6 @@ import nu.xom.Document;
 import nu.xom.Element;
 import nu.xom.Elements;
 
-import static java.util.Collections.reverseOrder;
 import static java8.util.Comparators.comparingInt;
 import static java8.util.function.Predicates.negate;
 import static java8.util.stream.Collectors.toList;
@@ -326,7 +325,7 @@ public class MusicXmlRenderer implements SimpleParserListener {
         streamNotesInMeasure(measure)
                 .forEachOrdered(currentNote -> {
                     if (notMarkedAsChord(currentNote)) {
-                        final int index = measure.indexOf(currentNote);
+                        final int currentIndex = measure.indexOf(currentNote);
 
                         final List<Element> concurrentNotes = streamNotesInMeasure(measure)
                                 .dropWhile(note -> note != currentNote)
@@ -340,27 +339,35 @@ public class MusicXmlRenderer implements SimpleParserListener {
 
                         stream(concurrentNotes).forEach(measure::removeChild);
 
-                        final List<Element> nonRests =
-                                stream(concurrentNotes).filter(negate(isRest)).collect(toList());
-                        stream(nonRests)
-                                .sorted(reverseOrder(comparingInt(MusicXmlRenderer::durationOf)))
-                                .skip(1)
-                                .forEach(note -> note.insertChild(new Element("chord"), 0));
-                        stream(nonRests)
+                        final List<Element> nonRests = stream(concurrentNotes)
+                                .filter(negate(isRest))
                                 .sorted(comparingInt(MusicXmlRenderer::durationOf))
-                                .forEachOrdered(note -> measure.insertChild(note, index));
+                                .collect(toList());
 
-                        final List<Element> rests =
-                                stream(concurrentNotes).filter(isRest).collect(toList());
+                        for (int i = 0; i < nonRests.size(); i++) {
+                            final Element note = nonRests.get(i);
+                            if (i < nonRests.size() - 1) {
+                                note.insertChild(new Element("chord"), 0);
+                            }
+                            measure.insertChild(note, currentIndex);
+                        }
+
+                        final List<Element> rests = stream(concurrentNotes)
+                                .filter(isRest)
+                                .sorted(comparingInt(MusicXmlRenderer::durationOf))
+                                .collect(toList());
+
                         stream(rests).findFirst().ifPresent(rest -> {
                             if (nonRests.size() > 0) {
-                                measure.insertChild(backupForDuration(durationOf(rest)), index);
+                                measure.insertChild(backupForDuration(durationOf(rest)),
+                                                    currentIndex);
                             }
-                            measure.insertChild(rest, index);
+                            measure.insertChild(rest, currentIndex);
                         });
                         stream(rests).skip(1).forEachOrdered(rest -> {
-                            measure.insertChild(backupForDuration(durationOf(rest)), index);
-                            measure.insertChild(rest, index);
+                            measure.insertChild(backupForDuration(durationOf(rest)),
+                                                currentIndex);
+                            measure.insertChild(rest, currentIndex);
                         });
                     }
                 });
@@ -391,7 +398,15 @@ public class MusicXmlRenderer implements SimpleParserListener {
     }
 
     private static boolean notMarkedAsChord(Element noteElement) {
-        return noteElement.getFirstChildElement("chord") == null;
+        return noteElement.getFirstChildElement("chord") == null
+                && !isFollowedByBackup(noteElement);
+    }
+
+    private static boolean isFollowedByBackup(Element noteElement) {
+        final Element parent = (Element) noteElement.getParent();
+        final int indexOfNext = parent.indexOf(noteElement) + 1;
+        return indexOfNext < parent.getChildCount()
+                && ((Element) parent.getChild(indexOfNext)).getLocalName().equals("backup");
     }
 
     private static Predicate<Element> isRest =

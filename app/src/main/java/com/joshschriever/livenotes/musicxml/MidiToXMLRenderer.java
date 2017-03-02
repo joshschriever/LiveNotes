@@ -29,7 +29,7 @@ public class MidiToXMLRenderer implements ShortMessageRecipient {
 
     public void startRecording() {
         if (ready && !recording) {
-            parser.startWithRests();
+            parser.startWithRests(System.currentTimeMillis());
             callbacks.onXMLUpdated();
             recording = true;
         }
@@ -39,7 +39,7 @@ public class MidiToXMLRenderer implements ShortMessageRecipient {
         if (recording) {
             ready = false;
             recording = false;
-            parser.stop();
+            parser.stop(System.currentTimeMillis());
             callbacks.onXMLUpdated();
         }
     }
@@ -51,9 +51,9 @@ public class MidiToXMLRenderer implements ShortMessageRecipient {
                 recording = true;
                 callbacks.onStartRecording();
 
-                parser.startWithNote(midiMessage);
+                parser.startWithNote(timeStamp, midiMessage);
             } else {
-                parser.parse(midiMessage);
+                parser.parse(timeStamp, midiMessage);
             }
             callbacks.onXMLUpdated();
         }

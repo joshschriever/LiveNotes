@@ -42,23 +42,19 @@ public class MidiParser {
         }
     }
 
-    public void startWithRests() {
-        long timeStamp = System.currentTimeMillis();
+    public void startWithRests(long timeStamp) {
         currentMeasureStartTime = timeStamp;
         restOnEvent(timeStamp, true);
         restOnEvent(timeStamp, false);
     }
 
-    public void startWithNote(ShortMessage message) {
-        long timeStamp = System.currentTimeMillis();
+    public void startWithNote(long timeStamp, ShortMessage message) {
         currentMeasureStartTime = timeStamp;
         restOnEvent(timeStamp, (message).getData1() < 48);
-        parseShortMessage(timeStamp, message);
+        parse(timeStamp, message);
     }
 
-    public void stop() {
-        long timeStamp = System.currentTimeMillis();
-
+    public void stop(long timeStamp) {
         for (int n = 0; n < 255; n++) {
             if (tempNoteRegistry[n] != 0L) {
                 noteOffEvent(timeStamp, n);
@@ -72,11 +68,7 @@ public class MidiParser {
         tempRestRegistry[1] = 0L;
     }
 
-    public void parse(ShortMessage message) {
-        parseShortMessage(System.currentTimeMillis(), message);
-    }
-
-    private void parseShortMessage(long timeStamp, ShortMessage message) {
+    public void parse(long timeStamp, ShortMessage message) {
         if (message.getCommand() == ShortMessage.NOTE_ON) {
             noteOnEvent(timeStamp, message.getData1());
         } else if (message.getCommand() == ShortMessage.NOTE_OFF) {

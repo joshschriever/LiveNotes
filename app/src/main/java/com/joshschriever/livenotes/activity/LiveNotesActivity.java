@@ -132,9 +132,8 @@ public class LiveNotesActivity extends Activity
     }
 
     private void initializeMidi() {
-        midiReceiver =
-                new MidiReceiver(this, new MidiDispatcher(new MidiMessageAdapter(midiToXMLRenderer),
-                                                          new MidiPlayer()));
+        midiReceiver = new MidiReceiver(this, new MidiDispatcher(
+                new MidiPlayer(), new MidiMessageAdapter(midiToXMLRenderer)));
     }
 
     @Override
