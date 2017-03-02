@@ -139,7 +139,8 @@ public class LiveNotesActivity extends Activity
     @Override
     public void onXMLUpdated() {
         setScoreXML(midiToXMLRenderer.getXML());
-        //TODO - scroll to bottom
+        scrollView.postDelayed(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN), 80);
+        scrollView.postDelayed(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN), 180);
     }
 
     private void setScoreXML(String newXML) {
