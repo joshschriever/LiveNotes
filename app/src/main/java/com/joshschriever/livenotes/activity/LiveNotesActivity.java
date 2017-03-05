@@ -160,6 +160,10 @@ public class LiveNotesActivity extends Activity
                                          1.0f));
     }
 
+    MidiToXMLRenderer getMidiToXMLRenderer() {
+        return midiToXMLRenderer;
+    }
+
     private void onReadyToRecord() {
         midiToXMLRenderer.setReady();
         setLongTapAction(LongTapAction.START, false);
