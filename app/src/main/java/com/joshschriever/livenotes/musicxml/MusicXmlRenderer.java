@@ -21,13 +21,9 @@ import static java8.util.function.Predicates.negate;
 import static java8.util.stream.Collectors.toList;
 import static java8.util.stream.StreamSupport.stream;
 
-//TODO - key signature handler
-
 // Based on JFugue
 public class MusicXmlRenderer implements SimpleParserListener {
 
-    private static final String[] NOTES = new String[]
-            {"C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B"};
     private static final SparseArray<String> BEAT_UNIT_STRINGS = new SparseArray<>(3);
 
     static {
@@ -43,20 +39,12 @@ public class MusicXmlRenderer implements SimpleParserListener {
 
     private final DurationHandler durationHandler;
     private final long margin;
+    private final KeySigHandler keySigHandler;
 
-    private final int beatsPerMeasure;
-    private final int beatType;
-    private final int tempo;
-
-    public MusicXmlRenderer(DurationHandler durationHandler,
-                            int beatsPerMeasure,
-                            int beatType,
-                            int tempo) {
+    public MusicXmlRenderer(DurationHandler durationHandler, KeySigHandler keySigHandler) {
         this.durationHandler = durationHandler;
         margin = durationHandler.shortestNoteLengthInMillis();
-        this.beatsPerMeasure = beatsPerMeasure;
-        this.beatType = beatType;
-        this.tempo = tempo;
+        this.keySigHandler = keySigHandler;
 
         elRoot = new Element("score-partwise");
         Element elID = new Element("identification");
@@ -107,19 +95,19 @@ public class MusicXmlRenderer implements SimpleParserListener {
 
             Element elKey = new Element("key");
             Element elFifths = new Element("fifths");
-            elFifths.appendChild("0");
+            elFifths.appendChild(Integer.toString(keySigHandler.fifths));
             elKey.appendChild(elFifths);
             Element elMode = new Element("mode");
-            elMode.appendChild("major");
+            elMode.appendChild(keySigHandler.isMajor ? "major" : "minor");
             elKey.appendChild(elMode);
             elAttributes.appendChild(elKey);
 
             Element elTime = new Element("time");
             Element elBeats = new Element("beats");
-            elBeats.appendChild(Integer.toString(beatsPerMeasure));
+            elBeats.appendChild(Integer.toString(durationHandler.beatsPerMeasure));
             elTime.appendChild(elBeats);
             Element elBeatType = new Element("beat-type");
-            elBeatType.appendChild(Integer.toString(beatType));
+            elBeatType.appendChild(Integer.toString(durationHandler.beatType));
             elTime.appendChild(elBeatType);
             elAttributes.appendChild(elTime);
 
@@ -144,7 +132,7 @@ public class MusicXmlRenderer implements SimpleParserListener {
             }
 
             Element elPerMinute = new Element("per-minute");
-            elPerMinute.appendChild(Integer.toString(tempo));
+            elPerMinute.appendChild(Integer.toString(durationHandler.markedTempo));
             elMetronome.appendChild(elPerMinute);
 
             elDirectionType.appendChild(elMetronome);
@@ -169,7 +157,7 @@ public class MusicXmlRenderer implements SimpleParserListener {
 
     private String getBeatUnitString() {
         return BEAT_UNIT_STRINGS.get(
-                beatType / (durationHandler.isTimeSignatureCompound() ? 2 : 1));
+                durationHandler.beatType / (durationHandler.isTimeSignatureCompound() ? 2 : 1));
     }
 
     @Override
@@ -203,6 +191,7 @@ public class MusicXmlRenderer implements SimpleParserListener {
                                         () -> measure.appendChild(elementForNote(tiedNote))));
 
         reCalculateChords(measure);
+        normalizeAccidentals(measure);
     }
 
     private void insertNote(Element elNote, Note note) {
@@ -223,15 +212,15 @@ public class MusicXmlRenderer implements SimpleParserListener {
         Element elNote = new Element("note");
         elNote.addAttribute(new Attribute("timeStamp", Long.toString(note.timeStamp)));
 
-        int iAlter = alterForNoteValue(note.value);
         if (note.isRest) {
             elNote.appendChild(new Element("rest"));
         } else {
             Element elPitch = new Element("pitch");
             Element elStep = new Element("step");
-            elStep.appendChild(stepForNoteValue(note.value));
+            elStep.appendChild(keySigHandler.stepForNoteValue(note.value));
             elPitch.appendChild(elStep);
 
+            int iAlter = keySigHandler.alterForNoteValue(note.value);
             if (iAlter != 0) {
                 Element elAlter = new Element("alter");
                 elAlter.appendChild(Integer.toString(iAlter));
@@ -239,7 +228,7 @@ public class MusicXmlRenderer implements SimpleParserListener {
             }
 
             Element elOctave = new Element("octave");
-            elOctave.appendChild(octaveForNoteValue(note.value));
+            elOctave.appendChild(keySigHandler.octaveForNoteValue(note.value));
             elPitch.appendChild(elOctave);
             elNote.appendChild(elPitch);
         }
@@ -271,15 +260,12 @@ public class MusicXmlRenderer implements SimpleParserListener {
             elNote.appendChild(new Element("dot"));
         }
 
-        if (iAlter != 0) {
-            Element elAccidental = new Element("accidental");
-            elAccidental.appendChild(iAlter == 1 ? "sharp" : "flat");
-            elNote.appendChild(elAccidental);
-        }
+        Element elAccidental = new Element("accidental");
+        elAccidental.appendChild(keySigHandler.accidentalForNoteValue(note.value));
+        elNote.appendChild(elAccidental);
 
-        int iStaff = note.value >= 48 ? 1 : 2;
         Element elStaff = new Element("staff");
-        elStaff.appendChild(Integer.toString(iStaff));
+        elStaff.appendChild(note.value >= 48 ? "1" : "2");
         elNote.appendChild(elStaff);
 
         if (bTied) {
@@ -300,19 +286,6 @@ public class MusicXmlRenderer implements SimpleParserListener {
         }
 
         return elNote;
-    }
-
-    private static String stepForNoteValue(int value) {
-        return NOTES[value % 12].substring(0, 1);
-    }
-
-    private static int alterForNoteValue(int value) {
-        String pitch = NOTES[value % 12];
-        return pitch.length() > 1 ? pitch.contains("#") ? 1 : -1 : 0;
-    }
-
-    private static String octaveForNoteValue(int value) {
-        return Integer.toString(value / 12);
     }
 
     private void reCalculateChords(Element measure) {
@@ -373,6 +346,10 @@ public class MusicXmlRenderer implements SimpleParserListener {
                 });
     }
 
+    private void normalizeAccidentals(Element measure) {
+        //TODO
+    }
+
     private static Stream<Element> streamNotesInMeasure(Element measure) {
         return streamElements(measure.getChildElements("note"));
     }
@@ -419,23 +396,23 @@ public class MusicXmlRenderer implements SimpleParserListener {
                          .getValue().equals(Integer.toString(duration));
     }
 
-    private static Predicate<Element> noteMatches(int value, int duration) {
+    private Predicate<Element> noteMatches(int value, int duration) {
         return elNote -> elNote.getFirstChildElement("rest") == null
                 && pitchMatches(elNote.getFirstChildElement("pitch"), value)
                 && elNote.getFirstChildElement("duration")
                          .getValue().equals(Integer.toString(duration));
     }
 
-    private static boolean pitchMatches(Element elPitch, int value) {
+    private boolean pitchMatches(Element elPitch, int value) {
         return elPitch.getFirstChildElement("step").getValue()
-                      .equals(stepForNoteValue(value))
+                      .equals(keySigHandler.stepForNoteValue(value))
                 && elPitch.getFirstChildElement("octave").getValue()
-                          .equals(octaveForNoteValue(value))
+                          .equals(keySigHandler.octaveForNoteValue(value))
                 && alterMatches(elPitch.getFirstChildElement("alter"), value);
     }
 
-    private static boolean alterMatches(Element elAlter, int value) {
-        int alter = alterForNoteValue(value);
+    private boolean alterMatches(Element elAlter, int value) {
+        int alter = keySigHandler.alterForNoteValue(value);
         return alter == 0 ? elAlter == null
                           : elAlter != null && elAlter.getValue().equals(Integer.toString(alter));
     }

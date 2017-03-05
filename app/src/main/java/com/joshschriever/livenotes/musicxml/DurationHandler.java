@@ -13,9 +13,9 @@ public class DurationHandler {
     private static final int MAX_BEAT_TYPE = 8;
     public static final int DIVISIONS_PER_BEAT = 4;
 
-    private final int beatsPerMeasure;
-    private final int beatType;
-    private final int markedTempo;
+    final int beatsPerMeasure;
+    final int beatType;
+    final int markedTempo;
     private final int actualBeatsTempo;
     private final int precision;
 
