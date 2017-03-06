@@ -40,6 +40,7 @@ public class MidiToXMLRenderer implements ShortMessageRecipient {
             ready = false;
             recording = false;
             parser.stop(System.currentTimeMillis());
+            renderer.cleanup();
             callbacks.onXMLUpdated();
         }
     }

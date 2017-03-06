@@ -11,7 +11,6 @@ import jp.kshoji.javax.sound.midi.ShortMessage;
 import static java8.util.J8Arrays.stream;
 import static java8.util.stream.StreamSupport.stream;
 
-// Based on JFugue
 public class MidiParser {
 
     private List<SimpleParserListener> listeners = new ArrayList<>();

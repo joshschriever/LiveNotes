@@ -2,6 +2,7 @@ package com.joshschriever.livenotes.musicxml;
 
 public class KeySigHandler {
 
+    public static final int[] STEP_INDICES = new int[] {0, 2, 4, 5, 7, 9, 11};
     private static final String[] NOTES_SHARP = new String[]
             {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
     private static final String[] NOTES_FLAT = new String[]
@@ -28,6 +29,11 @@ public class KeySigHandler {
         //TODO - actually use the key signature to get the correct accidental
         int alter = alterForNoteValue(value);
         return alter == 0 ? "natural" : alter == 1 ? "sharp" : "flat";
+    }
+
+    public String defaultAccidentalForNoteValue(int value) {
+        //TODO - actually use the key signature to get the correct default for the pitch
+        return "natural";
     }
 
     public String octaveForNoteValue(int value) {

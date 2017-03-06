@@ -44,8 +44,8 @@ public class LiveNotesActivityTest {
         renderer.messageReady(noteOn(49), 1800);
         renderer.messageReady(noteOff(49), 2400);
         renderer.messageReady(noteOn(49), 2400);
-        renderer.messageReady(noteOff(49), 3600);
-        renderer.messageReady(noteOn(49), 3600);
+        renderer.messageReady(noteOff(49), 3900);
+        renderer.messageReady(noteOn(49), 3900);
         renderer.messageReady(noteOff(49), 4200);
         renderer.messageReady(noteOn(48), 4200);
         renderer.messageReady(noteOff(48), 4800);
@@ -58,13 +58,17 @@ public class LiveNotesActivityTest {
         renderer.messageReady(noteOn(49), 6600);
         renderer.messageReady(noteOff(49), 7200);
         renderer.messageReady(noteOn(48), 7200);
-        renderer.messageReady(noteOff(48), 8000);
+        renderer.messageReady(noteOff(48), 7800);
+        renderer.messageReady(noteOn(49), 9000);
+        renderer.messageReady(noteOff(49), 12300);
+        renderer.messageReady(noteOn(49), 12300);
+        renderer.messageReady(noteOff(49), 12900);
 
-        sleep(8000);
+        sleep(999);
         renderer.stopRecording();
         sleep(999999);
 
-        //Should be | nu, sm, su, su | su, sm, nm, nu | sm, nm, sm, nm |
+        //Should be | nu, sm, su, su | su, sm, nm, nu | sm, nm, sm, nm | r, sm | su, su, sm | su, r
     }
 
     private static ShortMessage noteOn(int value) {

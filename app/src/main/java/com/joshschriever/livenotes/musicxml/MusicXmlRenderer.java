@@ -2,6 +2,7 @@ package com.joshschriever.livenotes.musicxml;
 
 import android.util.SparseArray;
 
+import java.util.Iterator;
 import java.util.List;
 
 import java8.util.Optional;
@@ -21,7 +22,6 @@ import static java8.util.function.Predicates.negate;
 import static java8.util.stream.Collectors.toList;
 import static java8.util.stream.StreamSupport.stream;
 
-// Based on JFugue
 public class MusicXmlRenderer implements SimpleParserListener {
 
     private static final SparseArray<String> BEAT_UNIT_STRINGS = new SparseArray<>(3);
@@ -162,6 +162,8 @@ public class MusicXmlRenderer implements SimpleParserListener {
 
     @Override
     public void measureEvent() {
+        normalizeAccidentals(elCurMeasure);
+
         int nextNumber = Integer.parseInt(allMeasures().get(allMeasures().size() - 1)
                                                        .getAttributeValue("number")) + 1;
 
@@ -191,7 +193,6 @@ public class MusicXmlRenderer implements SimpleParserListener {
                                         () -> measure.appendChild(elementForNote(tiedNote))));
 
         reCalculateChords(measure);
-        normalizeAccidentals(measure);
     }
 
     private void insertNote(Element elNote, Note note) {
@@ -260,9 +261,11 @@ public class MusicXmlRenderer implements SimpleParserListener {
             elNote.appendChild(new Element("dot"));
         }
 
-        Element elAccidental = new Element("accidental");
-        elAccidental.appendChild(keySigHandler.accidentalForNoteValue(note.value));
-        elNote.appendChild(elAccidental);
+        if (!note.isRest) {
+            Element elAccidental = new Element("accidental");
+            elAccidental.appendChild(keySigHandler.accidentalForNoteValue(note.value));
+            elNote.appendChild(elAccidental);
+        }
 
         Element elStaff = new Element("staff");
         elStaff.appendChild(note.value >= 48 ? "1" : "2");
@@ -347,7 +350,64 @@ public class MusicXmlRenderer implements SimpleParserListener {
     }
 
     private void normalizeAccidentals(Element measure) {
-        //TODO
+        for (int value : KeySigHandler.STEP_INDICES) {
+            Iterator<Element> notes = streamNotesInMeasure(measure)
+                    .filter(noteMatchesAnyOctaveAnyAlter(value))
+                    .collect(toList())
+                    .iterator();
+
+            if (notes.hasNext()) {
+                normalizeAccidentalsFor(notes, value);
+            }
+        }
+    }
+
+    private void normalizeAccidentalsFor(Iterator<Element> notes, int value) {
+        Element note = null;
+
+        while (notes.hasNext()) {
+            note = notes.next();
+            if (isEndOfTie(note)) {
+                removeAccidentalFrom(note);
+                if (!notes.hasNext()) {
+                    return;
+                }
+            } else {
+                break;
+            }
+        }
+
+        String last = accidentalOf(note);
+        if (keySigHandler.defaultAccidentalForNoteValue(value).equals(last)) {
+            removeAccidentalFrom(note);
+        }
+
+        while (notes.hasNext()) {
+            note = notes.next();
+            if (last.equals(accidentalOf(note))) {
+                removeAccidentalFrom(note);
+            } else {
+                last = accidentalOf(note);
+            }
+        }
+    }
+
+    private void removeAccidentalFrom(Element noteElement) {
+        Element accidental = noteElement.getFirstChildElement("accidental");
+        if (accidental != null) {
+            noteElement.removeChild(accidental);
+        }
+    }
+
+    private String accidentalOf(Element noteElement) {
+        return noteElement.getFirstChildElement("accidental").getValue();
+    }
+
+    public void cleanup() {
+        normalizeAccidentals(elCurMeasure);
+        if (streamElements(elCurMeasure.getChildElements()).allMatch(isRest)) {
+            elPart.removeChild(elCurMeasure);
+        }
     }
 
     private static Stream<Element> streamNotesInMeasure(Element measure) {
@@ -386,6 +446,11 @@ public class MusicXmlRenderer implements SimpleParserListener {
                 && ((Element) parent.getChild(indexOfNext)).getLocalName().equals("backup");
     }
 
+    private static boolean isEndOfTie(Element noteElement) {
+        Element tie = noteElement.getFirstChildElement("tie");
+        return tie != null && tie.getAttributeValue("type").equals("stop");
+    }
+
     private static Predicate<Element> isRest =
             noteElement -> noteElement.getFirstChildElement("rest") != null;
 
@@ -398,23 +463,32 @@ public class MusicXmlRenderer implements SimpleParserListener {
 
     private Predicate<Element> noteMatches(int value, int duration) {
         return elNote -> elNote.getFirstChildElement("rest") == null
-                && pitchMatches(elNote.getFirstChildElement("pitch"), value)
+                && exactPitchMatches(elNote.getFirstChildElement("pitch"), value)
                 && elNote.getFirstChildElement("duration")
                          .getValue().equals(Integer.toString(duration));
     }
 
-    private boolean pitchMatches(Element elPitch, int value) {
-        return elPitch.getFirstChildElement("step").getValue()
-                      .equals(keySigHandler.stepForNoteValue(value))
+    private Predicate<Element> noteMatchesAnyOctaveAnyAlter(int value) {
+        return elNote -> elNote.getFirstChildElement("rest") == null
+                && pitchStepMatches(elNote.getFirstChildElement("pitch"), value);
+    }
+
+    private boolean exactPitchMatches(Element elPitch, int value) {
+        return pitchStepMatches(elPitch, value)
+                && alterMatches(elPitch.getFirstChildElement("alter"), value)
                 && elPitch.getFirstChildElement("octave").getValue()
-                          .equals(keySigHandler.octaveForNoteValue(value))
-                && alterMatches(elPitch.getFirstChildElement("alter"), value);
+                          .equals(keySigHandler.octaveForNoteValue(value));
+    }
+
+    private boolean pitchStepMatches(Element elPitch, int value) {
+        return elPitch.getFirstChildElement("step").getValue()
+                      .equals(keySigHandler.stepForNoteValue(value));
     }
 
     private boolean alterMatches(Element elAlter, int value) {
         int alter = keySigHandler.alterForNoteValue(value);
         return alter == 0 ? elAlter == null
-                          : elAlter != null && elAlter.getValue().equals(Integer.toString(alter));
+                          : elAlter != null && Integer.parseInt(elAlter.getValue()) == alter;
     }
 
     private Optional<Element> firstNoteThatMatches(Predicate<Element> predicate) {
