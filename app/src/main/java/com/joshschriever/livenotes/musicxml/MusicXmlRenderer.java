@@ -350,7 +350,7 @@ public class MusicXmlRenderer implements SimpleParserListener {
     }
 
     private void normalizeAccidentals(Element measure) {
-        for (int value : KeySigHandler.STEP_INDICES) {
+        for (int value : keySigHandler.stepIndices()) {
             Iterator<Element> notes = streamNotesInMeasure(measure)
                     .filter(noteMatchesAnyOctaveAnyAlter(value))
                     .collect(toList())
@@ -378,7 +378,7 @@ public class MusicXmlRenderer implements SimpleParserListener {
         }
 
         String last = accidentalOf(note);
-        if (keySigHandler.defaultAccidentalForNoteValue(value).equals(last)) {
+        if (keySigHandler.accidentalForNoteValue(value).equals(last)) {
             removeAccidentalFrom(note);
         }
 
