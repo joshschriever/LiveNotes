@@ -14,6 +14,7 @@ import android.widget.Toast;
 
 import com.joshschriever.livenotes.R;
 import com.joshschriever.livenotes.enumeration.LongTapAction;
+import com.joshschriever.livenotes.fragment.KeySigDialogFragment;
 import com.joshschriever.livenotes.fragment.SaveDialogFragment;
 import com.joshschriever.livenotes.fragment.TimeDialogFragment;
 import com.joshschriever.livenotes.midi.MidiDispatcher;
@@ -48,11 +49,13 @@ public class LiveNotesActivity extends Activity
         SeeScoreView.TapNotification,
         LongTapAction.ActionVisitor,
         SaveDialogFragment.Callbacks,
-        TimeDialogFragment.Callbacks {
+        TimeDialogFragment.Callbacks,
+        KeySigDialogFragment.Callbacks {
 
     private static final LoadOptions LOAD_OPTIONS = new LoadOptions(SeeScoreLibKey, true);
     private static final String TAG_SAVE_DIALOG = "tagSaveDialog";
     private static final String TAG_TIME_DIALOG = "tagTimeDialog";
+    private static final String TAG_KEY_SIG_DIALOG = "tagKeySigDialog";
     private static final int PERMISSION_REQUEST_ALL_REQUIRED = 1;
     private static final List<String> REQUIRED_PERMISSIONS = new ArrayList<>();
 
@@ -70,6 +73,10 @@ public class LiveNotesActivity extends Activity
     private MidiReceiver midiReceiver;
 
     private Optional<LongTapAction> longTapAction = Optional.empty();
+
+    private int timeSigBeats;
+    private int timeSigBeatValue;
+    private int tempoBPM;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,25 +116,47 @@ public class LiveNotesActivity extends Activity
         new TimeDialogFragment(this).show(getFragmentManager(), TAG_TIME_DIALOG);
     }
 
-    @Override
-    public void onTimeSet(int timeSigBeats, int timeSigBeatValue, int tempoBPM) {
-        continueInitialize(timeSigBeats, timeSigBeatValue, tempoBPM);
-    }
-
-    private void continueInitialize(int timeSigBeats, int timeSigBeatValue, int tempoBPM) {
-        initializeScore(timeSigBeats, timeSigBeatValue, tempoBPM);
-        initializeMidi();
-        onReadyToRecord();
-    }
-
     private void initializeScoreView() {
         scoreView = new SeeScoreView(this, getAssets(), null, this);
         scrollView = (ScrollView) findViewById(R.id.scroll_view);
         scrollView.addView(scoreView);
     }
 
-    private void initializeScore(int timeSigBeats, int timeSigBeatValue, int tempoBPM) {
-        midiToXMLRenderer = new MidiToXMLRenderer(this, timeSigBeats, timeSigBeatValue, tempoBPM);
+    @Override
+    public void onTimeSet(int timeSigBeats, int timeSigBeatValue, int tempoBPM) {
+        this.timeSigBeats = timeSigBeats;
+        this.timeSigBeatValue = timeSigBeatValue;
+        this.tempoBPM = tempoBPM;
+
+        new KeySigDialogFragment(this).show(getFragmentManager(), TAG_KEY_SIG_DIALOG);
+    }
+
+    @Override
+    public void onKeySigSet(int fifths, boolean isMajor) {
+        continueInitialize(timeSigBeats, timeSigBeatValue, tempoBPM, fifths, isMajor);
+    }
+
+    private void continueInitialize(int timeSigBeats,
+                                    int timeSigBeatValue,
+                                    int tempoBPM,
+                                    int keyFifths,
+                                    boolean keyIsMajor) {
+        initializeRenderer(timeSigBeats, timeSigBeatValue, tempoBPM, keyFifths, keyIsMajor);
+        initializeMidi();
+        onReadyToRecord();
+    }
+
+    private void initializeRenderer(int timeSigBeats,
+                                    int timeSigBeatValue,
+                                    int tempoBPM,
+                                    int keyFifths,
+                                    boolean keyIsMajor) {
+        midiToXMLRenderer = new MidiToXMLRenderer(this,
+                                                  timeSigBeats,
+                                                  timeSigBeatValue,
+                                                  tempoBPM,
+                                                  keyFifths,
+                                                  keyIsMajor);
         onXMLUpdated();
     }
 

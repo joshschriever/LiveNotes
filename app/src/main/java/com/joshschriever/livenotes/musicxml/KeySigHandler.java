@@ -3,6 +3,14 @@ package com.joshschriever.livenotes.musicxml;
 public class KeySigHandler {
 
     public static final int[] STEP_INDICES = new int[] {0, 2, 4, 5, 7, 9, 11};
+
+    public static final int[] FIFTHS = new int[]
+            {-7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7};
+    public static final String[] KEYS_MAJOR = new String[]
+            {"Cb", "Gb", "Db", "Ab", "Eb", "Bb", "F", "C", "G", "D", "A", "E", "B", "F#", "C#"};
+    public static final String[] KEYS_MINOR = new String[]
+            {"Ab", "Eb", "Bb", "F", "C", "G", "D", "A", "E", "B", "F#", "C#", "G#", "D#", "A#"};
+
     private static final String[] NOTES_SHARP = new String[]
             {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
     private static final String[] NOTES_FLAT = new String[]
