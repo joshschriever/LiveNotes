@@ -153,6 +153,7 @@ public class LiveNotesActivity extends Activity
     protected void onSaveInstanceState(Bundle outState) {
         if (midiToXMLRenderer != null) {
             midiToXMLRenderer.stopRecording();
+            setLongTapAction(LongTapAction.SAVE, false);
         }
 
         outState.putInt(KEY_BEATS, timeSigBeats);
