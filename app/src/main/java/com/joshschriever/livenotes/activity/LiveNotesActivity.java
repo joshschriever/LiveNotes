@@ -43,8 +43,6 @@ import static java8.util.stream.Collectors.toList;
 import static java8.util.stream.StreamSupport.stream;
 import static uk.co.dolphin_com.seescoreandroid.LicenceKeyInstance.SeeScoreLibKey;
 
-//TODO - save state?
-
 //TODO - check tablet layout
 
 public class LiveNotesActivity extends Activity
@@ -56,11 +54,14 @@ public class LiveNotesActivity extends Activity
         KeySigDialogFragment.Callbacks,
         PrecisionDialogFragment.Callbacks {
 
-    private static final LoadOptions LOAD_OPTIONS = new LoadOptions(SeeScoreLibKey, true);
+    private static final String KEY_MUSIC_XML = "keyMusicXML";
+
     private static final String TAG_SAVE_DIALOG = "tagSaveDialog";
     private static final String TAG_TIME_DIALOG = "tagTimeDialog";
     private static final String TAG_KEY_SIG_DIALOG = "tagKeySigDialog";
     private static final String TAG_PRECISION_DIALOG = "tagPrecisionDialog";
+
+    private static final LoadOptions LOAD_OPTIONS = new LoadOptions(SeeScoreLibKey, true);
     private static final int PERMISSION_REQUEST_ALL_REQUIRED = 1;
     private static final List<String> REQUIRED_PERMISSIONS = new ArrayList<>();
 
@@ -82,8 +83,10 @@ public class LiveNotesActivity extends Activity
     private int timeSigBeats;
     private int timeSigBeatValue;
     private int tempoBPM;
-    private int fifths;
-    private boolean isMajor;
+    private int keyFifths;
+    private boolean keyIsMajor;
+    private int precision;
+    private String restoredXML;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,7 +95,33 @@ public class LiveNotesActivity extends Activity
         getWindow().addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON | LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_live_notes);
 
-        checkPermissions();
+        if (savedInstanceState == null) {
+            checkPermissions();
+        }
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+
+        restoredXML = savedInstanceState.getString(KEY_MUSIC_XML);
+        if (restoredXML == null) {
+            checkPermissions();
+        } else {
+            initializeScoreView();
+            setScoreXML(restoredXML);
+            setLongTapAction(LongTapAction.SAVE, false);
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        if (midiToXMLRenderer != null) {
+            midiToXMLRenderer.stopRecording();
+        }
+        outState.putString(KEY_MUSIC_XML, getXML());
+
+        super.onSaveInstanceState(outState);
     }
 
     private void checkPermissions() {
@@ -140,8 +169,8 @@ public class LiveNotesActivity extends Activity
 
     @Override
     public void onKeySigSet(int fifths, boolean isMajor) {
-        this.fifths = fifths;
-        this.isMajor = isMajor;
+        this.keyFifths = fifths;
+        this.keyIsMajor = isMajor;
 
         new PrecisionDialogFragment(this, timeSigBeatValue).show(getFragmentManager(),
                                                                  TAG_PRECISION_DIALOG);
@@ -149,26 +178,18 @@ public class LiveNotesActivity extends Activity
 
     @Override
     public void onPrecisionSet(int precision) {
-        continueInitialize(timeSigBeats, timeSigBeatValue, tempoBPM, fifths, isMajor, precision);
+        this.precision = precision;
+
+        continueInitialize();
     }
 
-    private void continueInitialize(int timeSigBeats,
-                                    int timeSigBeatValue,
-                                    int tempoBPM,
-                                    int fifths,
-                                    boolean isMajor,
-                                    int precision) {
-        initializeRenderer(timeSigBeats, timeSigBeatValue, tempoBPM, fifths, isMajor, precision);
+    private void continueInitialize() {
+        initializeRenderer();
         initializeMidi();
         onReadyToRecord();
     }
 
-    private void initializeRenderer(int timeSigBeats,
-                                    int timeSigBeatValue,
-                                    int tempoBPM,
-                                    int keyFifths,
-                                    boolean keyIsMajor,
-                                    int precision) {
+    private void initializeRenderer() {
         midiToXMLRenderer = new MidiToXMLRenderer(this,
                                                   timeSigBeats,
                                                   timeSigBeatValue,
@@ -302,7 +323,7 @@ public class LiveNotesActivity extends Activity
             File file = new File(path, fileName);
 
             FileOutputStream stream = new FileOutputStream(file);
-            stream.write(midiToXMLRenderer.getXML().getBytes());
+            stream.write(getXML().getBytes());
             stream.flush();
             stream.close();
 
@@ -314,16 +335,26 @@ public class LiveNotesActivity extends Activity
         }
     }
 
+    private String getXML() {
+        return midiToXMLRenderer != null ? midiToXMLRenderer.getXML() : restoredXML;
+    }
+
     private void resetFields() {
         scrollView.removeView(scoreView);
         scrollView = null;
         scoreView = null;
 
         midiToXMLRenderer = null;
-        midiReceiver.close();
-        midiReceiver = null;
+        closeMidiReceiver();
 
         longTapAction = Optional.empty();
+    }
+
+    private void closeMidiReceiver() {
+        if (midiReceiver != null) {
+            midiReceiver.close();
+            midiReceiver = null;
+        }
     }
 
     @Override
@@ -332,9 +363,7 @@ public class LiveNotesActivity extends Activity
 
     @Override
     protected void onDestroy() {
-        if (midiReceiver != null) {
-            midiReceiver.close();
-        }
+        closeMidiReceiver();
         super.onDestroy();
     }
 
