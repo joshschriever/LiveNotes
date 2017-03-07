@@ -62,7 +62,9 @@ public class KeySigHandler {
     }
 
     public String octaveForNoteValue(int value) {
-        return Integer.toString(value / 12);
+        String pitch = pitchForNoteValue(value);
+        int adjustment = pitch.equals("B#") ? -1 : pitch.equals("Cb") ? 1 : 0;
+        return Integer.toString(value / 12 + adjustment);
     }
 
     private String pitchForNoteValue(int value) {
