@@ -13,18 +13,27 @@ public class DurationHandler {
     private static final int MAX_BEAT_TYPE = 8;
     public static final int DIVISIONS_PER_BEAT = 4;
 
+    public static final int PRECISION_THIRTY_SECOND = 1;
+    public static final int PRECISION_SIXTEENTH = 2;
+    public static final int PRECISION_EIGHTH = 4;
+    public static final int PRECISION_QUARTER = 8;
+
     final int beatsPerMeasure;
     final int beatType;
     final int markedTempo;
     private final int actualBeatsTempo;
     private final int precision;
 
-    public DurationHandler(int beatsPerMeasure, int beatType, int tempo) {
+    public DurationHandler(int beatsPerMeasure, int beatType, int tempo, int precision) {
         this.beatsPerMeasure = beatsPerMeasure;
         this.beatType = beatType;
         markedTempo = tempo;
         actualBeatsTempo = markedTempo * (isTimeSignatureCompound() ? 3 : 1);
-        precision = 4;//TODO - precision options: 1, 2, 4, 8 - Minimum: MAX_BEAT_TYPE / beatType
+        this.precision = precision;
+    }
+
+    public static int minimumPrecisionForBeatType(int beatType) {
+        return MAX_BEAT_TYPE / beatType;
     }
 
     //Note - this is the absolute shortest note, not accounting for the precision level

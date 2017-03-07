@@ -14,6 +14,13 @@
     <string name="tempo">Tempo</string>
     <string name="ok">OK</string>
 
+    <string name="precision_dialog_title">Set Precision</string>
+    <string name="shortest_note_to_recognize">Shortest note to recognize:</string>
+    <string name="thirty_second">32nd</string>
+    <string name="sixteenth">Sixteenth</string>
+    <string name="eighth">Eighth</string>
+    <string name="quarter">Quarter</string>
+
     <string name="key_sig_dialog_title">Set Key Signature</string>
     <string name="major">Major</string>
     <string name="minor">Minor</string>

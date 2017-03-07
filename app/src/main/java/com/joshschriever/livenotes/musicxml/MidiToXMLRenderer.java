@@ -18,10 +18,11 @@ public class MidiToXMLRenderer implements ShortMessageRecipient {
                              int beatValue,
                              int tempo,
                              int keyFifths,
-                             boolean keyIsMajor) {
+                             boolean keyIsMajor,
+                             int precision) {
         this.callbacks = callbacks;
 
-        DurationHandler durationHandler = new DurationHandler(beats, beatValue, tempo);
+        DurationHandler durationHandler = new DurationHandler(beats, beatValue, tempo, precision);
         renderer = new MusicXmlRenderer(durationHandler, new KeySigHandler(keyFifths, keyIsMajor));
 
         parser = new MidiParser(durationHandler);

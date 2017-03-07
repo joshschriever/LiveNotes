@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:padding="25dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="4dp"
+        android:gravity="center_horizontal"
+        android:text="@string/shortest_note_to_recognize"
+        android:textColor="@android:color/black"
+        android:textSize="15sp"/>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:id="@+id/thirty_second_parent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@mipmap/dotted_quarter_note"/>
+            <!--TODO-->
+
+            <ToggleButton
+                android:id="@+id/thirty_second"
+                android:layout_width="104dp"
+                android:layout_height="wrap_content"
+                android:clickable="false"
+                android:textOff="@string/thirty_second"
+                android:textOn="@string/thirty_second"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/sixteenth_parent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@mipmap/dotted_half_note"/>
+            <!--TODO-->
+
+            <ToggleButton
+                android:id="@+id/sixteenth"
+                android:layout_width="104dp"
+                android:layout_height="wrap_content"
+                android:clickable="false"
+                android:textOff="@string/sixteenth"
+                android:textOn="@string/sixteenth"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/eighth_parent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@mipmap/eighth_note"/>
+
+            <ToggleButton
+                android:id="@+id/eighth"
+                android:layout_width="104dp"
+                android:layout_height="wrap_content"
+                android:clickable="false"
+                android:textOff="@string/eighth"
+                android:textOn="@string/eighth"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/quarter_parent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@mipmap/quarter_note"/>
+
+            <ToggleButton
+                android:id="@+id/quarter"
+                android:layout_width="104dp"
+                android:layout_height="wrap_content"
+                android:clickable="false"
+                android:textOff="@string/quarter"
+                android:textOn="@string/quarter"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+</LinearLayout>
