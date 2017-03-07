@@ -2,6 +2,7 @@ package com.joshschriever.livenotes.activity;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.DialogFragment;
 import android.content.pm.PackageManager;
 import android.media.MediaScannerConnection;
 import android.os.Bundle;
@@ -54,6 +55,12 @@ public class LiveNotesActivity extends Activity
         KeySigDialogFragment.Callbacks,
         PrecisionDialogFragment.Callbacks {
 
+    private static final String KEY_BEATS = "keyBeats";
+    private static final String KEY_BEAT_VALUE = "keyBeatValue";
+    private static final String KEY_TEMPO = "keyTempo";
+    private static final String KEY_FIFTHS = "keyFifths";
+    private static final String KEY_IS_MAJOR = "keyIsMajor";
+    private static final String KEY_PRECISION = "keyPrecision";
     private static final String KEY_MUSIC_XML = "keyMusicXML";
 
     private static final String TAG_SAVE_DIALOG = "tagSaveDialog";
@@ -104,10 +111,38 @@ public class LiveNotesActivity extends Activity
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
 
+        timeSigBeats = savedInstanceState.getInt(KEY_BEATS);
+        timeSigBeatValue = savedInstanceState.getInt(KEY_BEAT_VALUE);
+        tempoBPM = savedInstanceState.getInt(KEY_TEMPO);
+        keyFifths = savedInstanceState.getInt(KEY_FIFTHS);
+        keyIsMajor = savedInstanceState.getBoolean(KEY_IS_MAJOR);
+        precision = savedInstanceState.getInt(KEY_PRECISION);
         restoredXML = savedInstanceState.getString(KEY_MUSIC_XML);
-        if (restoredXML == null) {
-            checkPermissions();
-        } else {
+
+        DialogFragment timeDialog =
+                (DialogFragment) getFragmentManager().findFragmentByTag(TAG_TIME_DIALOG);
+        DialogFragment keySigDialog =
+                (DialogFragment) getFragmentManager().findFragmentByTag(TAG_KEY_SIG_DIALOG);
+        DialogFragment precisionDialog =
+                (DialogFragment) getFragmentManager().findFragmentByTag(TAG_PRECISION_DIALOG);
+        DialogFragment saveDialog =
+                (DialogFragment) getFragmentManager().findFragmentByTag(TAG_SAVE_DIALOG);
+
+        if (timeDialog != null) {
+            timeDialog.dismiss();
+            initialize();
+        } else if (keySigDialog != null) {
+            keySigDialog.dismiss();
+            initializeScoreView();
+            showKeySigDialog();
+        } else if (precisionDialog != null) {
+            precisionDialog.dismiss();
+            initializeScoreView();
+            showPrecisionDialog();
+        } else if (restoredXML != null) {
+            if (saveDialog != null) {
+                saveDialog.dismiss();
+            }
             initializeScoreView();
             setScoreXML(restoredXML);
             setLongTapAction(LongTapAction.SAVE, false);
@@ -119,6 +154,13 @@ public class LiveNotesActivity extends Activity
         if (midiToXMLRenderer != null) {
             midiToXMLRenderer.stopRecording();
         }
+
+        outState.putInt(KEY_BEATS, timeSigBeats);
+        outState.putInt(KEY_BEAT_VALUE, timeSigBeatValue);
+        outState.putInt(KEY_TEMPO, tempoBPM);
+        outState.putInt(KEY_FIFTHS, keyFifths);
+        outState.putBoolean(KEY_IS_MAJOR, keyIsMajor);
+        outState.putInt(KEY_PRECISION, precision);
         outState.putString(KEY_MUSIC_XML, getXML());
 
         super.onSaveInstanceState(outState);
@@ -164,6 +206,10 @@ public class LiveNotesActivity extends Activity
         this.timeSigBeatValue = timeSigBeatValue;
         this.tempoBPM = tempoBPM;
 
+        showKeySigDialog();
+    }
+
+    private void showKeySigDialog() {
         new KeySigDialogFragment(this).show(getFragmentManager(), TAG_KEY_SIG_DIALOG);
     }
 
@@ -172,6 +218,10 @@ public class LiveNotesActivity extends Activity
         this.keyFifths = fifths;
         this.keyIsMajor = isMajor;
 
+        showPrecisionDialog();
+    }
+
+    private void showPrecisionDialog() {
         new PrecisionDialogFragment(this, timeSigBeatValue).show(getFragmentManager(),
                                                                  TAG_PRECISION_DIALOG);
     }
