@@ -31,7 +31,7 @@
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@mipmap/thirty_second_note"/>
+                android:src="@drawable/thirty_second_note"/>
 
             <ToggleButton
                 android:id="@+id/thirty_second"
@@ -53,7 +53,7 @@
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@mipmap/sixteenth_note"/>
+                android:src="@drawable/sixteenth_note"/>
 
             <ToggleButton
                 android:id="@+id/sixteenth"
@@ -75,7 +75,7 @@
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@mipmap/eighth_note"/>
+                android:src="@drawable/eighth_note"/>
 
             <ToggleButton
                 android:id="@+id/eighth"
@@ -97,7 +97,7 @@
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@mipmap/quarter_note"/>
+                android:src="@drawable/quarter_note"/>
 
             <ToggleButton
                 android:id="@+id/quarter"
@@ -110,4 +110,5 @@
         </LinearLayout>
 
     </LinearLayout>
+
 </LinearLayout>

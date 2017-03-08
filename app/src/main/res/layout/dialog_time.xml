@@ -149,7 +149,7 @@
                 android:layout_height="match_parent"
                 android:gravity="center_vertical"
                 android:paddingBottom="20dp"
-                android:src="@mipmap/quarter_note"/>
+                android:src="@drawable/quarter_note"/>
 
             <TextView
                 android:layout_width="wrap_content"

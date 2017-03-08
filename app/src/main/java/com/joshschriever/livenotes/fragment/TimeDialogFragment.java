@@ -25,11 +25,11 @@ public class TimeDialogFragment extends DialogFragment {
     private static final SparseIntArray NOTE_DRAWABLES = new SparseIntArray(5);
 
     static {
-        NOTE_DRAWABLES.put(2, R.mipmap.half_note);
-        NOTE_DRAWABLES.put(3, R.mipmap.dotted_half_note);
-        NOTE_DRAWABLES.put(4, R.mipmap.quarter_note);
-        NOTE_DRAWABLES.put(6, R.mipmap.dotted_quarter_note);
-        NOTE_DRAWABLES.put(8, R.mipmap.eighth_note);
+        NOTE_DRAWABLES.put(2, R.drawable.half_note);
+        NOTE_DRAWABLES.put(3, R.drawable.dotted_half_note);
+        NOTE_DRAWABLES.put(4, R.drawable.quarter_note);
+        NOTE_DRAWABLES.put(6, R.drawable.dotted_quarter_note);
+        NOTE_DRAWABLES.put(8, R.drawable.eighth_note);
     }
 
     private Callbacks callbacks;
