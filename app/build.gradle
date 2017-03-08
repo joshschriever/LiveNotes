@@ -38,7 +38,6 @@ dependencies {
     compile 'com.android.support:appcompat-v7:24.2.1'
     compile 'net.sourceforge.streamsupport:streamsupport:1.5.2'
     compile 'com.github.billthefarmer:mididriver:v1.11'
-    compile 'jp.kshoji:javax-sound-midi:0.0.3:@aar'
 
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'

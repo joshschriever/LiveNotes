@@ -8,7 +8,6 @@ import android.media.MediaScannerConnection;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
-import android.util.Log;
 import android.view.WindowManager.LayoutParams;
 import android.widget.ScrollView;
 import android.widget.Toast;
@@ -262,7 +261,6 @@ public class LiveNotesActivity extends Activity
     }
 
     private void setScoreXML(String newXML) {
-        Log.i("setScoreXML", newXML);
         try {
             setScore(SScore.loadXMLData(newXML.getBytes(), LOAD_OPTIONS));
         } catch (ScoreException e) {

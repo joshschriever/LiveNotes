@@ -1,10 +1,9 @@
 package com.joshschriever.livenotes.musicxml;
 
-import com.joshschriever.livenotes.midi.ShortMessageRecipient;
+import com.joshschriever.livenotes.midi.AdaptedMessageRecipient;
+import com.joshschriever.livenotes.midi.AdaptedMidiMessage;
 
-import jp.kshoji.javax.sound.midi.ShortMessage;
-
-public class MidiToXMLRenderer implements ShortMessageRecipient {
+public class MidiToXMLRenderer implements AdaptedMessageRecipient {
 
     private Callbacks callbacks;
     private MusicXmlRenderer renderer;
@@ -52,15 +51,15 @@ public class MidiToXMLRenderer implements ShortMessageRecipient {
     }
 
     @Override
-    public void messageReady(ShortMessage midiMessage, long timeStamp) {
+    public void messageReady(AdaptedMidiMessage message, long timeStamp) {
         if (ready) {
             if (!recording) {
                 recording = true;
                 callbacks.onStartRecording();
 
-                parser.startWithNote(timeStamp, midiMessage);
+                parser.startWithNote(timeStamp, message);
             } else {
-                parser.parse(timeStamp, midiMessage);
+                parser.parse(timeStamp, message);
             }
             callbacks.onXMLUpdated();
         }

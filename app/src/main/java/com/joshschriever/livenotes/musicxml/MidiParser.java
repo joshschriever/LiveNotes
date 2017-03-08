@@ -2,11 +2,11 @@ package com.joshschriever.livenotes.musicxml;
 
 import android.util.Pair;
 
+import com.joshschriever.livenotes.midi.AdaptedMidiMessage;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import jp.kshoji.javax.sound.midi.ShortMessage;
 
 import static java8.util.J8Arrays.stream;
 import static java8.util.stream.StreamSupport.stream;
@@ -47,9 +47,9 @@ public class MidiParser {
         restOnEvent(timeStamp, false);
     }
 
-    public void startWithNote(long timeStamp, ShortMessage message) {
+    public void startWithNote(long timeStamp, AdaptedMidiMessage message) {
         currentMeasureStartTime = timeStamp;
-        restOnEvent(timeStamp, (message).getData1() < 48);
+        restOnEvent(timeStamp, message.data < 48);
         parse(timeStamp, message);
     }
 
@@ -67,11 +67,11 @@ public class MidiParser {
         tempRestRegistry[1] = 0L;
     }
 
-    public void parse(long timeStamp, ShortMessage message) {
-        if (message.getCommand() == ShortMessage.NOTE_ON) {
-            noteOnEvent(timeStamp, message.getData1());
-        } else if (message.getCommand() == ShortMessage.NOTE_OFF) {
-            noteOffEvent(timeStamp, message.getData1());
+    public void parse(long timeStamp, AdaptedMidiMessage message) {
+        if (message.command == AdaptedMidiMessage.STATUS_NOTE_ON) {
+            noteOnEvent(timeStamp, message.data);
+        } else if (message.command == AdaptedMidiMessage.STATUS_NOTE_OFF) {
+            noteOffEvent(timeStamp, message.data);
         }
     }
 

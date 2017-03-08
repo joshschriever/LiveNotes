@@ -4,15 +4,13 @@ import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
 
 import com.joshschriever.livenotes.R;
+import com.joshschriever.livenotes.midi.AdaptedMidiMessage;
 import com.joshschriever.livenotes.musicxml.MidiToXMLRenderer;
 
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import jp.kshoji.javax.sound.midi.InvalidMidiDataException;
-import jp.kshoji.javax.sound.midi.ShortMessage;
 
 import static android.support.test.espresso.Espresso.onView;
 import static android.support.test.espresso.action.ViewActions.click;
@@ -73,20 +71,12 @@ public class LiveNotesActivityTest {
         //Should be | nu, sm, su, su | su, sm, nm, nu | sm, nm, sm, nm | r, sm | su, su, sm | su, r
     }
 
-    private static ShortMessage noteOn(int value) {
-        try {
-            return new ShortMessage(ShortMessage.NOTE_ON, value, 127);
-        } catch (InvalidMidiDataException e) {
-            return null;
-        }
+    private static AdaptedMidiMessage noteOn(int value) {
+        return new AdaptedMidiMessage(AdaptedMidiMessage.STATUS_NOTE_ON, value);
     }
 
-    private static ShortMessage noteOff(int value) {
-        try {
-            return new ShortMessage(ShortMessage.NOTE_OFF, value, 127);
-        } catch (InvalidMidiDataException e) {
-            return null;
-        }
+    private static AdaptedMidiMessage noteOff(int value) {
+        return new AdaptedMidiMessage(AdaptedMidiMessage.STATUS_NOTE_OFF, value);
     }
 
     private static void sleep(int millis) {
