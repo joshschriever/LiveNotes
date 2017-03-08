@@ -44,8 +44,6 @@ import static java8.util.stream.Collectors.toList;
 import static java8.util.stream.StreamSupport.stream;
 import static uk.co.dolphin_com.seescoreandroid.LicenceKeyInstance.SeeScoreLibKey;
 
-//TODO - check tablet layout
-
 public class LiveNotesActivity extends Activity
         implements MidiToXMLRenderer.Callbacks,
         SeeScoreView.TapNotification,

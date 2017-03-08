@@ -36,6 +36,7 @@ public class LiveNotesActivityTest {
     public void test44Time100BpmFMajor() {
         onView(withText(R.string.ok)).perform(click());
         onView(withText(R.string.ok)).perform(click());
+        onView(withText(R.string.ok)).perform(click());
         MidiToXMLRenderer renderer = activity.getMidiToXMLRenderer();
 
         renderer.messageReady(noteOn(48), 600);

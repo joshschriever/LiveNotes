@@ -10,7 +10,7 @@ import android.widget.ToggleButton;
 import com.joshschriever.livenotes.R;
 import com.joshschriever.livenotes.musicxml.KeySigHandler;
 
-//TODO - drawables?
+//TODO - drawables
 public class KeySigDialogFragment extends DialogFragment {
 
     private Callbacks callbacks;
