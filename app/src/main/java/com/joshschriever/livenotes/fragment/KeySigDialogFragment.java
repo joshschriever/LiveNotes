@@ -4,17 +4,40 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.os.Bundle;
+import android.util.SparseIntArray;
+import android.widget.ImageView;
 import android.widget.NumberPicker;
 import android.widget.ToggleButton;
 
 import com.joshschriever.livenotes.R;
 import com.joshschriever.livenotes.musicxml.KeySigHandler;
 
-//TODO - drawables
-public class KeySigDialogFragment extends DialogFragment {
+public class KeySigDialogFragment extends DialogFragment
+        implements NumberPicker.OnValueChangeListener {
+
+    private static final SparseIntArray KEY_SIG_DRAWABLES = new SparseIntArray(15);
+
+    static {
+        KEY_SIG_DRAWABLES.put(-7, R.drawable.key_flat_7);
+        KEY_SIG_DRAWABLES.put(-6, R.drawable.key_flat_6);
+        KEY_SIG_DRAWABLES.put(-5, R.drawable.key_flat_5);
+        KEY_SIG_DRAWABLES.put(-4, R.drawable.key_flat_4);
+        KEY_SIG_DRAWABLES.put(-3, R.drawable.key_flat_3);
+        KEY_SIG_DRAWABLES.put(-2, R.drawable.key_flat_2);
+        KEY_SIG_DRAWABLES.put(-1, R.drawable.key_flat_1);
+        KEY_SIG_DRAWABLES.put(0, R.drawable.key_0);
+        KEY_SIG_DRAWABLES.put(1, R.drawable.key_sharp_1);
+        KEY_SIG_DRAWABLES.put(2, R.drawable.key_sharp_2);
+        KEY_SIG_DRAWABLES.put(3, R.drawable.key_sharp_3);
+        KEY_SIG_DRAWABLES.put(4, R.drawable.key_sharp_4);
+        KEY_SIG_DRAWABLES.put(5, R.drawable.key_sharp_5);
+        KEY_SIG_DRAWABLES.put(6, R.drawable.key_sharp_6);
+        KEY_SIG_DRAWABLES.put(7, R.drawable.key_sharp_7);
+    }
 
     private Callbacks callbacks;
 
+    private ImageView keySigImage;
     private NumberPicker key;
     private ToggleButton major;
     private ToggleButton minor;
@@ -52,13 +75,22 @@ public class KeySigDialogFragment extends DialogFragment {
         dialog.findViewById(R.id.major_parent).setOnClickListener(__ -> onMajorClicked());
         dialog.findViewById(R.id.minor_parent).setOnClickListener(__ -> onMinorClicked());
 
+        keySigImage = (ImageView) dialog.findViewById(R.id.key_sig_image);
+
         key = (NumberPicker) dialog.findViewById(R.id.key);
         key.setWrapSelectorWheel(false);
         key.setMinValue(0);
         key.setMaxValue(KeySigHandler.FIFTHS.length - 1);
 
         onMajorClicked();
+        key.setOnValueChangedListener(this);
         key.setValue(6);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        onValueChange(key, 6, 6);
     }
 
     private void onMajorClicked() {
@@ -77,9 +109,19 @@ public class KeySigDialogFragment extends DialogFragment {
         }
     }
 
+    @Override
+    public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
+        keySigImage.setImageDrawable(getResources().getDrawable(KEY_SIG_DRAWABLES.get(fifths()),
+                                                                null));
+    }
+
+    private int fifths() {
+        return KeySigHandler.FIFTHS[key.getValue()];
+    }
+
     private void dismiss(boolean callback) {
         if (callback) {
-            callbacks.onKeySigSet(KeySigHandler.FIFTHS[key.getValue()], major.isChecked());
+            callbacks.onKeySigSet(fifths(), major.isChecked());
         }
         dismiss();
     }

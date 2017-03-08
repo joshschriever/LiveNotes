@@ -7,11 +7,19 @@
     android:orientation="horizontal"
     android:padding="25dp">
 
+    <ImageView
+        android:id="@+id/key_sig_image"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:src="@drawable/key_flat_1"/>
+
     <NumberPicker
         android:id="@+id/key"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
+        android:layout_marginLeft="32dp"
         android:layout_marginRight="32dp"
         android:descendantFocusability="blocksDescendants"/>
 
