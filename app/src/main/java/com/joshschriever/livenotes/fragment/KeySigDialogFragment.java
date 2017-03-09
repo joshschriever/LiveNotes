@@ -35,20 +35,10 @@ public class KeySigDialogFragment extends DialogFragment
         KEY_SIG_DRAWABLES.put(7, R.drawable.key_sharp_7);
     }
 
-    private Callbacks callbacks;
-
     private ImageView keySigImage;
     private NumberPicker key;
     private ToggleButton major;
     private ToggleButton minor;
-
-    public KeySigDialogFragment() {
-    }
-
-    @SuppressWarnings("ValidFragment")
-    public KeySigDialogFragment(Callbacks callbacks) {
-        this.callbacks = callbacks;
-    }
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -82,6 +72,7 @@ public class KeySigDialogFragment extends DialogFragment
         key.setMinValue(0);
         key.setMaxValue(KeySigHandler.FIFTHS.length - 1);
 
+        major.setChecked(false);
         onMajorClicked();
         key.setOnValueChangedListener(this);
         key.setValue(6);
@@ -121,7 +112,7 @@ public class KeySigDialogFragment extends DialogFragment
 
     private void dismiss(boolean callback) {
         if (callback) {
-            callbacks.onKeySigSet(fifths(), major.isChecked());
+            ((Callbacks) getActivity()).onKeySigSet(fifths(), major.isChecked());
         }
         dismiss();
     }

@@ -13,21 +13,13 @@ import java.util.Locale;
 
 public class SaveDialogFragment extends DialogFragment {
 
-    private Callbacks callbacks;
     private String filename;
-
-    public SaveDialogFragment() {
-    }
-
-    @SuppressWarnings("ValidFragment")
-    public SaveDialogFragment(Callbacks callbacks) {
-        this.callbacks = callbacks;
-        filename = "Composition_" + new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss", Locale.US)
-                .format(Calendar.getInstance().getTime()) + ".xml";
-    }
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
+        filename = "Composition_" + new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss", Locale.US)
+                .format(Calendar.getInstance().getTime()) + ".xml";
+
         Dialog dialog = new AlertDialog.Builder(getContext())
                 .setTitle(R.string.save_musicxml_file)
                 .setMessage(getString(R.string.save_score_as, filename))
@@ -42,9 +34,9 @@ public class SaveDialogFragment extends DialogFragment {
 
     private void dismiss(boolean save) {
         if (save) {
-            callbacks.onSave(filename);
+            ((Callbacks) getActivity()).onSave(filename);
         } else {
-            callbacks.onCancelSaving();
+            ((Callbacks) getActivity()).onCancelSaving();
         }
         dismiss();
     }

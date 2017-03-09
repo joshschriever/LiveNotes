@@ -12,22 +12,22 @@ import com.joshschriever.livenotes.musicxml.DurationHandler;
 
 public class PrecisionDialogFragment extends DialogFragment {
 
-    private Callbacks callbacks;
+    private static final String ARG_BEAT_TYPE = "argBeatType";
+
+    public static PrecisionDialogFragment newInstance(int beatType) {
+        PrecisionDialogFragment fragment = new PrecisionDialogFragment();
+        Bundle arguments = new Bundle();
+        arguments.putInt(ARG_BEAT_TYPE, beatType);
+        fragment.setArguments(arguments);
+        return fragment;
+    }
+
     int minimumPrecision;
 
     private ToggleButton thirtySecond;
     private ToggleButton sixteenth;
     private ToggleButton eighth;
     private ToggleButton quarter;
-
-    public PrecisionDialogFragment() {
-    }
-
-    @SuppressWarnings("ValidFragment")
-    public PrecisionDialogFragment(Callbacks callbacks, int beatType) {
-        this.callbacks = callbacks;
-        minimumPrecision = DurationHandler.minimumPrecisionForBeatType(beatType);
-    }
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -45,6 +45,8 @@ public class PrecisionDialogFragment extends DialogFragment {
     @Override
     public void onStart() {
         super.onStart();
+        minimumPrecision =
+                DurationHandler.minimumPrecisionForBeatType(getArguments().getInt(ARG_BEAT_TYPE));
         initializeViews(getDialog());
     }
 
@@ -121,13 +123,13 @@ public class PrecisionDialogFragment extends DialogFragment {
 
     private void dismiss(boolean callback) {
         if (callback) {
-            callbacks.onPrecisionSet(thirtySecond.isChecked()
-                                     ? DurationHandler.PRECISION_THIRTY_SECOND
-                                     : sixteenth.isChecked()
-                                       ? DurationHandler.PRECISION_SIXTEENTH
-                                       : eighth.isChecked()
-                                         ? DurationHandler.PRECISION_EIGHTH
-                                         : DurationHandler.PRECISION_QUARTER);
+            ((Callbacks) getActivity()).onPrecisionSet(thirtySecond.isChecked()
+                                                       ? DurationHandler.PRECISION_THIRTY_SECOND
+                                                       : sixteenth.isChecked()
+                                                         ? DurationHandler.PRECISION_SIXTEENTH
+                                                         : eighth.isChecked()
+                                                           ? DurationHandler.PRECISION_EIGHTH
+                                                           : DurationHandler.PRECISION_QUARTER);
         }
         dismiss();
     }

@@ -2,7 +2,6 @@ package com.joshschriever.livenotes.activity;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.DialogFragment;
 import android.content.pm.PackageManager;
 import android.media.MediaScannerConnection;
 import android.os.Bundle;
@@ -58,6 +57,7 @@ public class LiveNotesActivity extends Activity
     private static final String KEY_FIFTHS = "keyFifths";
     private static final String KEY_IS_MAJOR = "keyIsMajor";
     private static final String KEY_PRECISION = "keyPrecision";
+    private static final String KEY_CAN_START = "keyCanStart";
     private static final String KEY_MUSIC_XML = "keyMusicXML";
 
     private static final String TAG_SAVE_DIALOG = "tagSaveDialog";
@@ -114,35 +114,16 @@ public class LiveNotesActivity extends Activity
         keyFifths = savedInstanceState.getInt(KEY_FIFTHS);
         keyIsMajor = savedInstanceState.getBoolean(KEY_IS_MAJOR);
         precision = savedInstanceState.getInt(KEY_PRECISION);
-        restoredXML = savedInstanceState.getString(KEY_MUSIC_XML);
 
-        DialogFragment timeDialog =
-                (DialogFragment) getFragmentManager().findFragmentByTag(TAG_TIME_DIALOG);
-        DialogFragment keySigDialog =
-                (DialogFragment) getFragmentManager().findFragmentByTag(TAG_KEY_SIG_DIALOG);
-        DialogFragment precisionDialog =
-                (DialogFragment) getFragmentManager().findFragmentByTag(TAG_PRECISION_DIALOG);
-        DialogFragment saveDialog =
-                (DialogFragment) getFragmentManager().findFragmentByTag(TAG_SAVE_DIALOG);
-
-        if (timeDialog != null) {
-            timeDialog.dismiss();
-            initialize();
-        } else if (keySigDialog != null) {
-            keySigDialog.dismiss();
-            initializeScoreView();
-            showKeySigDialog();
-        } else if (precisionDialog != null) {
-            precisionDialog.dismiss();
-            initializeScoreView();
-            showPrecisionDialog();
-        } else if (restoredXML != null) {
-            if (saveDialog != null) {
-                saveDialog.dismiss();
+        initializeScoreView();
+        if (savedInstanceState.getBoolean(KEY_CAN_START)) {
+            continueInitialize();
+        } else {
+            restoredXML = savedInstanceState.getString(KEY_MUSIC_XML);
+            if (restoredXML != null) {
+                setScoreXML(restoredXML);
+                setLongTapAction(LongTapAction.SAVE, false);
             }
-            initializeScoreView();
-            setScoreXML(restoredXML);
-            setLongTapAction(LongTapAction.SAVE, false);
         }
     }
 
@@ -150,7 +131,11 @@ public class LiveNotesActivity extends Activity
     protected void onSaveInstanceState(Bundle outState) {
         if (midiToXMLRenderer != null) {
             midiToXMLRenderer.stopRecording();
-            setLongTapAction(LongTapAction.SAVE, false);
+            if (longTapAction.map(action -> action.equals(LongTapAction.START)).orElse(false)) {
+                outState.putBoolean(KEY_CAN_START, true);
+            } else {
+                setLongTapAction(LongTapAction.SAVE, false);
+            }
         }
 
         outState.putInt(KEY_BEATS, timeSigBeats);
@@ -189,7 +174,7 @@ public class LiveNotesActivity extends Activity
 
     private void initialize() {
         initializeScoreView();
-        new TimeDialogFragment(this).show(getFragmentManager(), TAG_TIME_DIALOG);
+        new TimeDialogFragment().show(getFragmentManager(), TAG_TIME_DIALOG);
     }
 
     private void initializeScoreView() {
@@ -204,11 +189,7 @@ public class LiveNotesActivity extends Activity
         this.timeSigBeatValue = timeSigBeatValue;
         this.tempoBPM = tempoBPM;
 
-        showKeySigDialog();
-    }
-
-    private void showKeySigDialog() {
-        new KeySigDialogFragment(this).show(getFragmentManager(), TAG_KEY_SIG_DIALOG);
+        new KeySigDialogFragment().show(getFragmentManager(), TAG_KEY_SIG_DIALOG);
     }
 
     @Override
@@ -216,12 +197,8 @@ public class LiveNotesActivity extends Activity
         this.keyFifths = fifths;
         this.keyIsMajor = isMajor;
 
-        showPrecisionDialog();
-    }
-
-    private void showPrecisionDialog() {
-        new PrecisionDialogFragment(this, timeSigBeatValue).show(getFragmentManager(),
-                                                                 TAG_PRECISION_DIALOG);
+        PrecisionDialogFragment.newInstance(timeSigBeatValue).show(getFragmentManager(),
+                                                                   TAG_PRECISION_DIALOG);
     }
 
     @Override
@@ -316,7 +293,7 @@ public class LiveNotesActivity extends Activity
     @Override
     public void saveScore() {
         clearLongTapAction();
-        new SaveDialogFragment(this).show(getFragmentManager(), TAG_SAVE_DIALOG);
+        new SaveDialogFragment().show(getFragmentManager(), TAG_SAVE_DIALOG);
     }
 
     @Override

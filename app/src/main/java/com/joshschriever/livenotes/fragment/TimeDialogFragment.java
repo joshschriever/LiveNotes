@@ -32,8 +32,6 @@ public class TimeDialogFragment extends DialogFragment {
         NOTE_DRAWABLES.put(8, R.drawable.eighth_note);
     }
 
-    private Callbacks callbacks;
-
     private List<Integer> simpleBeatsOptions;
     private List<Integer> simpleBeatValueOptions;
     private List<Integer> compoundBeatsOptions;
@@ -54,14 +52,6 @@ public class TimeDialogFragment extends DialogFragment {
 
     private ImageView tempoNote;
     private NumberPicker tempo;
-
-    public TimeDialogFragment() {
-    }
-
-    @SuppressWarnings("ValidFragment")
-    public TimeDialogFragment(Callbacks callbacks) {
-        this.callbacks = callbacks;
-    }
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -133,6 +123,7 @@ public class TimeDialogFragment extends DialogFragment {
         tempo.setValue(getResources().getInteger(R.integer.default_tempo));
         tempo.setWrapSelectorWheel(false);
 
+        simple.setChecked(false);
         onSimpleClicked();
     }
 
@@ -233,9 +224,7 @@ public class TimeDialogFragment extends DialogFragment {
 
     private void dismiss(boolean callback) {
         if (callback) {
-            callbacks.onTimeSet(beats(),
-                                beatValue(),
-                                tempo.getValue());
+            ((Callbacks) getActivity()).onTimeSet(beats(), beatValue(), tempo.getValue());
         }
         dismiss();
     }
