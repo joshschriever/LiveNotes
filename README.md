@@ -1,7 +1,7 @@
 Live Notes
 ==========
 
-*Live Notes* is an Android app that notates basic MIDI input, displays it on a score, and saves to the MusicXML format. Version 1.0 was completed for my senior thesis at the University of Northern Iowa.
+*Live Notes* is an Android app that transcribes basic MIDI input, displays it on a score, and saves to the MusicXML format. Version 1.0 was completed for my senior thesis at the University of Northern Iowa.
 
 Located in the "other" directory are a demo video, as well as an apk file to be installed on Android devices.
 
