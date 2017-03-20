@@ -1,4 +1,5 @@
-# LiveNotes
+Live Notes
+==========
 
 TODO - a little general info
 
@@ -22,3 +23,12 @@ License
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
+
+Credits
+-------
+- SeeScore - http://www.seescore.co.uk/developers/musicxml-sdk
+- XOM - http://www.xom.nu
+- Midi Driver - https://github.com/billthefarmer/mididriver
+- Gradle Retrolambda plugin - https://github.com/evant/gradle-retrolambda
+- streamsupport - https://github.com/streamsupport/streamsupport
+- Android Support Library: https://developer.android.com/tools/extras/support-library.html
