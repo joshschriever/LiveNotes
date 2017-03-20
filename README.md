@@ -1,11 +1,11 @@
 Live Notes
 ==========
 
-TODO - a little general info
+*Live Notes* is an Android app that notates basic MIDI input, displays it on a score, and saves to the MusicXML format. Version 1.0 was completed for my senior thesis at the University of Northern Iowa.
 
-TODO - mention where the apk and video are located
+Located in the "other" directory are a demo video, as well as an apk file to be installed on Android devices.
 
-TODO - mention only the evaluation version can be built
+Contributions are welcome. If you wish to build *Live Notes* yourself, only the "evaluation" version can be built, not the "licensed" version. It will simply have a watermark over the score.
 
 License
 -------
@@ -26,9 +26,9 @@ License
 
 Credits
 -------
-- SeeScore - http://www.seescore.co.uk/developers/musicxml-sdk
-- XOM - http://www.xom.nu
-- Midi Driver - https://github.com/billthefarmer/mididriver
-- Gradle Retrolambda plugin - https://github.com/evant/gradle-retrolambda
-- streamsupport - https://github.com/streamsupport/streamsupport
+- SeeScore: http://www.seescore.co.uk/developers/musicxml-sdk
+- XOM: http://www.xom.nu
+- Midi Driver: https://github.com/billthefarmer/mididriver
+- Gradle Retrolambda Plugin: https://github.com/evant/gradle-retrolambda
+- streamsupport: https://github.com/streamsupport/streamsupport
 - Android Support Library: https://developer.android.com/tools/extras/support-library.html
